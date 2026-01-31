@@ -172,13 +172,16 @@ export function WaveformCanvas({
   );
 
   /**
-   * Handle mouse wheel events for zooming
+   * Native wheel event handler for trackpad pinch/scroll zoom
+   * Using native event listener with passive: false to prevent default browser zoom
+   * when ctrlKey is pressed (trackpad pinch gesture)
    */
-  const handleWheel = useCallback(
-    (event: React.WheelEvent<HTMLDivElement>) => {
-      if (!onZoomAtPoint) return;
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !onZoomAtPoint) return;
 
-      // Prevent default scrolling behavior
+    const handleNativeWheel = (event: WheelEvent) => {
+      // Prevent default browser zoom (ctrlKey + wheel) and page scroll
       event.preventDefault();
 
       // Get the time position at the cursor
@@ -187,18 +190,24 @@ export function WaveformCanvas({
       // Determine zoom direction
       // Wheel up (negative deltaY) = zoom in
       // Wheel down (positive deltaY) = zoom out
+      // For trackpad pinch gestures, browsers set ctrlKey=true and deltaY reflects pinch direction
       const direction: 'in' | 'out' = event.deltaY < 0 ? 'in' : 'out';
 
       onZoomAtPoint(time, direction);
-    },
-    [onZoomAtPoint, pixelToTime]
-  );
+    };
+
+    // Use passive: false to allow preventDefault() for ctrlKey + wheel (browser zoom)
+    container.addEventListener('wheel', handleNativeWheel, { passive: false });
+
+    return () => {
+      container.removeEventListener('wheel', handleNativeWheel);
+    };
+  }, [onZoomAtPoint, pixelToTime]);
 
   return (
     <div
       ref={containerRef}
       className="w-full flex items-center justify-center"
-      onWheel={handleWheel}
     >
       <canvas
         ref={canvasRef}
