@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { DropZone } from './components/DropZone';
 import { WaveformCanvas } from './components/WaveformCanvas';
+import { FileLoaderButton } from './components/FileLoaderButton';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
 import { useZoom } from './hooks/useZoom';
@@ -82,21 +83,39 @@ function App() {
 
   // Show waveform
   return (
-    <div className="w-full h-full flex items-center justify-center bg-neutral-900">
-      <WaveformCanvas
-        peaks={waveformData}
-        height={200}
-        visibleRange={visibleRange}
-        onZoomAtPoint={zoomAtPoint}
-        onPan={setPan}
-        panOffset={panOffset}
-        onAddMarker={addMarker}
-        markers={markers}
-        selectedMarkerId={selectedMarkerId}
-        onSelectMarker={setSelectedMarkerId}
-        onUpdateMarker={updateMarker}
-        onDeleteMarker={deleteMarker}
-      />
+    <div className="w-full h-full flex flex-col bg-neutral-900">
+      {/* Header with load file button */}
+      <div className="flex-shrink-0 p-3 flex items-center gap-3">
+        <FileLoaderButton onFileSelected={handleFileLoaded} />
+        {isLoading && (
+          <span className="text-neutral-400 text-xs">Loading...</span>
+        )}
+      </div>
+
+      {/* Waveform area */}
+      <div className="flex-1 flex items-center justify-center">
+        <WaveformCanvas
+          peaks={waveformData}
+          height={200}
+          visibleRange={visibleRange}
+          onZoomAtPoint={zoomAtPoint}
+          onPan={setPan}
+          panOffset={panOffset}
+          onAddMarker={addMarker}
+          markers={markers}
+          selectedMarkerId={selectedMarkerId}
+          onSelectMarker={setSelectedMarkerId}
+          onUpdateMarker={updateMarker}
+          onDeleteMarker={deleteMarker}
+        />
+      </div>
+
+      {/* Error display */}
+      {error && (
+        <div className="fixed bottom-4 left-4 right-4 p-3 bg-red-900 border border-red-700 text-red-200 text-sm">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
