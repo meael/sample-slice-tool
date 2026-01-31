@@ -1,0 +1,85 @@
+## Codebase Patterns
+- Use `npm run typecheck` to verify TypeScript types before committing
+- Use `npm run build` to test production builds
+- Tailwind CSS is imported in src/index.css via `@import "tailwindcss"`
+- Dark theme is enforced in :root with #1a1a1a background
+- Monospace font is set globally via system font stack
+- Use `import type` for type-only imports (verbatimModuleSyntax enabled)
+- No parameter properties in constructors (erasableSyntaxOnly enabled)
+
+---
+
+## 2026-01-31 - US-001
+- What was implemented: Project scaffolding with React 18+, TypeScript, Vite, and Tailwind CSS
+- Files changed:
+  - package.json: Project config with dependencies
+  - vite.config.ts: Vite + Tailwind plugin setup
+  - src/index.css: Tailwind import and base styles
+  - src/App.tsx: Minimal app component
+  - tsconfig.json, tsconfig.app.json, tsconfig.node.json: TypeScript config
+  - Created folder structure: src/components, src/hooks, src/services, src/types
+- **Learnings for future iterations:**
+  - Vite's create command may require non-interactive mode with --template flag
+  - Tailwind CSS v4 uses @tailwindcss/vite plugin instead of postcss
+  - Use `npx tsc -b` or `npm run typecheck` to verify types
+---
+
+## 2026-01-31 - US-002
+- What was implemented: Audio decoding service using Web Audio API
+- Files changed:
+  - src/services/AudioService.ts: AudioService class with decodeFile method
+  - src/types/audio.ts: Type definitions for audio metadata, supported formats, and errors
+- **Learnings for future iterations:**
+  - TypeScript `erasableSyntaxOnly` prevents parameter properties in constructor - use explicit property declaration
+  - Use `import type` for type-only imports when `verbatimModuleSyntax` is enabled
+  - SUPPORTED_AUDIO_FORMATS and SUPPORTED_EXTENSIONS arrays define supported file types
+  - AudioDecodeError class provides typed error handling with UNSUPPORTED_FORMAT, DECODE_ERROR, FILE_READ_ERROR
+---
+
+## 2026-01-31 - US-003
+- What was implemented: Waveform data extraction service to downsample AudioBuffer to peak data for rendering
+- Files changed:
+  - src/services/WaveformService.ts: WaveformService class with extractPeaks, resample, and calculateOptimalPeakCount methods
+  - src/types/waveform.ts: Type definitions for WaveformPeaks and WaveformExtractionOptions
+- **Learnings for future iterations:**
+  - Use Float32Array for waveform peak data (efficient and matches Web Audio API channel data format)
+  - Peak extraction finds max absolute value in each segment but preserves signed value for waveform shape
+  - Channel combination strategy can be 'combine' (average) or 'first' (use first channel only)
+  - Calculate samplesPerPeak as ceil(length / targetPeaks) for consistent resolution
+---
+
+## 2026-01-31 - US-004
+- What was implemented: Marker state management hook with CRUD operations and selection support
+- Files changed:
+  - src/hooks/useMarkers.ts: useMarkers hook with addMarker, updateMarker, deleteMarker, getMarkers, setSelectedMarkerId, clearMarkers
+  - src/types/marker.ts: Type definitions for Marker, MarkersState, and MarkersActions interfaces
+- **Learnings for future iterations:**
+  - Hook automatically sorts markers by time position after any add/update operation
+  - addMarker returns the created marker and auto-selects it
+  - deleteMarker clears selectedMarkerId if deleted marker was selected
+  - clearMarkers useful for resetting state when loading new file
+---
+
+## 2026-01-31 - US-005
+- What was implemented: Zoom and pan state management hook for waveform view navigation
+- Files changed:
+  - src/hooks/useZoom.ts: useZoom hook with zoomIn, zoomOut, zoomAtPoint, setPan, setZoomLevel, reset functions
+  - src/types/zoom.ts: Type definitions for ZoomState, ZoomOptions, ZoomActions, VisibleRange interfaces
+- **Learnings for future iterations:**
+  - useZoom requires a `duration` option to properly clamp pan offset to waveform boundaries
+  - zoomAtPoint keeps the specified time position stable under cursor during zoom (essential for mouse-centered zoom)
+  - visibleRange helper calculates start/end times based on current zoom and pan state
+  - Zoom level 1 = full view (entire waveform visible), higher values = zoomed in
+  - Pan offset is in seconds, clamped to ensure visible range stays within [0, duration]
+---
+
+## 2026-01-31 - US-006
+- What was implemented: Audio file drop zone component for drag-and-drop file loading
+- Files changed:
+  - src/components/DropZone.tsx: DropZone component with drag/drop handlers, file validation, and visual feedback
+- **Learnings for future iterations:**
+  - Use dragCounter ref to track nested dragenter/dragleave events (prevents premature isDragging=false)
+  - Validate files by both MIME type (SUPPORTED_AUDIO_FORMATS) and extension (SUPPORTED_EXTENSIONS) as fallback
+  - Use Tailwind transition-colors for smooth border/background changes during drag
+  - DropZone accepts onFileLoaded prop callback - use in App.tsx to wire up AudioService
+---
