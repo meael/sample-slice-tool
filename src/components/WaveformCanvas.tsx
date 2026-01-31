@@ -1,7 +1,8 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import type { WaveformPeaks } from '../types/waveform';
 import type { VisibleRange } from '../types/zoom';
 import type { Marker } from '../types/marker';
+import { ContextMenu } from './ContextMenu';
 
 /** Hit detection threshold in pixels for selecting markers */
 const MARKER_HIT_THRESHOLD = 10;
@@ -77,6 +78,13 @@ export function WaveformCanvas({
   // Marker drag state
   const isDraggingMarkerRef = useRef(false);
   const draggingMarkerIdRef = useRef<string | null>(null);
+
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    markerId: string;
+  } | null>(null);
 
   /**
    * Draw the waveform on the canvas
@@ -513,17 +521,73 @@ export function WaveformCanvas({
     };
   }, [onDeleteMarker, selectedMarkerId]);
 
+  /**
+   * Handle right-click (context menu) on markers
+   * Shows a context menu with Delete option when right-clicking on a marker
+   */
+  const handleContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      const clickedMarkerId = findMarkerAtPixel(event.clientX);
+
+      if (clickedMarkerId) {
+        // Prevent native context menu
+        event.preventDefault();
+
+        // Show custom context menu
+        setContextMenu({
+          x: event.clientX,
+          y: event.clientY,
+          markerId: clickedMarkerId,
+        });
+
+        // Also select the marker
+        if (onSelectMarker) {
+          onSelectMarker(clickedMarkerId);
+        }
+      }
+    },
+    [findMarkerAtPixel, onSelectMarker]
+  );
+
+  /**
+   * Handle closing the context menu
+   */
+  const handleCloseContextMenu = useCallback(() => {
+    setContextMenu(null);
+  }, []);
+
+  /**
+   * Handle delete from context menu
+   */
+  const handleContextMenuDelete = useCallback(() => {
+    if (contextMenu && onDeleteMarker) {
+      onDeleteMarker(contextMenu.markerId);
+    }
+    setContextMenu(null);
+  }, [contextMenu, onDeleteMarker]);
+
   return (
-    <div
-      ref={containerRef}
-      className="w-full flex items-center justify-center"
-      style={{ cursor: onPan ? 'grab' : 'default' }}
-      onMouseDown={handleMouseDown}
-    >
-      <canvas
-        ref={canvasRef}
-        className="block"
-      />
-    </div>
+    <>
+      <div
+        ref={containerRef}
+        className="w-full flex items-center justify-center"
+        style={{ cursor: onPan ? 'grab' : 'default' }}
+        onMouseDown={handleMouseDown}
+        onContextMenu={handleContextMenu}
+      >
+        <canvas
+          ref={canvasRef}
+          className="block"
+        />
+      </div>
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[{ label: 'Delete', onClick: handleContextMenuDelete }]}
+          onClose={handleCloseContextMenu}
+        />
+      )}
+    </>
   );
 }
