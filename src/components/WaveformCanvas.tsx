@@ -1,0 +1,160 @@
+import { useRef, useEffect, useCallback } from 'react';
+import type { WaveformPeaks } from '../types/waveform';
+import type { VisibleRange } from '../types/zoom';
+
+export interface WaveformCanvasProps {
+  /** Waveform peak data to render */
+  peaks: WaveformPeaks;
+  /** Visible time range for rendering (optional, defaults to full waveform) */
+  visibleRange?: VisibleRange;
+  /** Height of the canvas in pixels */
+  height?: number;
+  /** Waveform color */
+  waveformColor?: string;
+  /** Background color */
+  backgroundColor?: string;
+}
+
+/**
+ * Canvas component for rendering audio waveform
+ * Renders peak data as a centered waveform with high contrast colors
+ */
+export function WaveformCanvas({
+  peaks,
+  visibleRange,
+  height = 200,
+  waveformColor = '#22d3ee', // cyan-400
+  backgroundColor = '#262626', // neutral-800
+}: WaveformCanvasProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * Draw the waveform on the canvas
+   */
+  const drawWaveform = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Get container dimensions
+    const rect = container.getBoundingClientRect();
+    const width = rect.width;
+    const canvasHeight = height;
+
+    // Set canvas size with device pixel ratio for crisp rendering
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = width * dpr;
+    canvas.height = canvasHeight * dpr;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${canvasHeight}px`;
+    ctx.scale(dpr, dpr);
+
+    // Clear canvas with background color
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, width, canvasHeight);
+
+    // Calculate which peaks to render based on visible range
+    const { peaks: peakData, duration } = peaks;
+    const totalPeaks = peakData.length;
+
+    let startPeakIndex = 0;
+    let endPeakIndex = totalPeaks;
+
+    if (visibleRange) {
+      const peaksPerSecond = totalPeaks / duration;
+      startPeakIndex = Math.floor(visibleRange.start * peaksPerSecond);
+      endPeakIndex = Math.ceil(visibleRange.end * peaksPerSecond);
+    }
+
+    // Clamp indices
+    startPeakIndex = Math.max(0, startPeakIndex);
+    endPeakIndex = Math.min(totalPeaks, endPeakIndex);
+
+    const visiblePeakCount = endPeakIndex - startPeakIndex;
+    if (visiblePeakCount <= 0) return;
+
+    // Calculate how many peaks per pixel
+    const peaksPerPixel = visiblePeakCount / width;
+
+    // Draw waveform
+    ctx.fillStyle = waveformColor;
+    const centerY = canvasHeight / 2;
+    const maxAmplitude = canvasHeight / 2 - 2; // Leave 2px margin
+
+    if (peaksPerPixel <= 1) {
+      // More pixels than peaks - draw individual bars
+      const pixelsPerPeak = width / visiblePeakCount;
+
+      for (let i = 0; i < visiblePeakCount; i++) {
+        const peakIndex = startPeakIndex + i;
+        const peakValue = peakData[peakIndex];
+        const x = i * pixelsPerPeak;
+
+        // Draw symmetric waveform (mirrored above and below center)
+        const barHeight = Math.abs(peakValue) * maxAmplitude;
+        const barWidth = Math.max(1, pixelsPerPeak - 1);
+
+        // Draw bar from center, extending both up and down
+        ctx.fillRect(x, centerY - barHeight, barWidth, barHeight * 2);
+      }
+    } else {
+      // More peaks than pixels - aggregate peaks per pixel
+      for (let x = 0; x < width; x++) {
+        const startPeak = startPeakIndex + Math.floor(x * peaksPerPixel);
+        const endPeak = startPeakIndex + Math.floor((x + 1) * peaksPerPixel);
+
+        // Find max absolute value in this pixel's range
+        let maxValue = 0;
+        for (let i = startPeak; i < endPeak && i < endPeakIndex; i++) {
+          const absValue = Math.abs(peakData[i]);
+          if (absValue > maxValue) {
+            maxValue = absValue;
+          }
+        }
+
+        // Draw bar
+        const barHeight = maxValue * maxAmplitude;
+        ctx.fillRect(x, centerY - barHeight, 1, barHeight * 2);
+      }
+    }
+
+    // Draw center line (subtle)
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, centerY);
+    ctx.lineTo(width, centerY);
+    ctx.stroke();
+  }, [peaks, visibleRange, height, waveformColor, backgroundColor]);
+
+  // Draw on mount and when dependencies change
+  useEffect(() => {
+    drawWaveform();
+  }, [drawWaveform]);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      drawWaveform();
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [drawWaveform]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="w-full flex items-center justify-center"
+    >
+      <canvas
+        ref={canvasRef}
+        className="block"
+      />
+    </div>
+  );
+}
