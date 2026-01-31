@@ -13,7 +13,7 @@ function App() {
   const [audioDuration, setAudioDuration] = useState<number>(0);
 
   // Zoom and pan state management
-  const { visibleRange, zoomAtPoint, reset: resetZoom } = useZoom({
+  const { visibleRange, zoomAtPoint, setPan, panOffset, reset: resetZoom } = useZoom({
     duration: audioDuration,
     minZoom: 1,
     maxZoom: 100,
@@ -83,6 +83,8 @@ function App() {
         height={200}
         visibleRange={visibleRange}
         onZoomAtPoint={zoomAtPoint}
+        onPan={setPan}
+        panOffset={panOffset}
       />
     </div>
   );

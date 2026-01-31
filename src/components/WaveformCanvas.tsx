@@ -15,6 +15,10 @@ export interface WaveformCanvasProps {
   backgroundColor?: string;
   /** Callback when user wants to zoom at a specific time position */
   onZoomAtPoint?: (time: number, direction: 'in' | 'out') => void;
+  /** Callback when user pans horizontally */
+  onPan?: (offset: number) => void;
+  /** Current pan offset (in seconds) - needed for pan calculations */
+  panOffset?: number;
 }
 
 /**
@@ -28,9 +32,16 @@ export function WaveformCanvas({
   waveformColor = '#22d3ee', // cyan-400
   backgroundColor = '#262626', // neutral-800
   onZoomAtPoint,
+  onPan,
+  panOffset = 0,
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Drag state for panning
+  const isDraggingRef = useRef(false);
+  const dragStartXRef = useRef(0);
+  const dragStartPanRef = useRef(0);
 
   /**
    * Draw the waveform on the canvas
@@ -172,28 +183,120 @@ export function WaveformCanvas({
   );
 
   /**
-   * Native wheel event handler for trackpad pinch/scroll zoom
+   * Convert a pixel distance to time duration
+   */
+  const pixelDistanceToTime = useCallback(
+    (pixelDistance: number): number => {
+      const container = containerRef.current;
+      if (!container) return 0;
+
+      const rect = container.getBoundingClientRect();
+      const rangeStart = visibleRange?.start ?? 0;
+      const rangeEnd = visibleRange?.end ?? peaks.duration;
+      const rangeDuration = rangeEnd - rangeStart;
+
+      return (pixelDistance / rect.width) * rangeDuration;
+    },
+    [visibleRange, peaks.duration]
+  );
+
+  /**
+   * Handle mouse down for drag-to-pan
+   */
+  const handleMouseDown = useCallback(
+    (event: React.MouseEvent) => {
+      if (!onPan) return;
+
+      isDraggingRef.current = true;
+      dragStartXRef.current = event.clientX;
+      dragStartPanRef.current = panOffset;
+
+      // Change cursor to grabbing
+      if (containerRef.current) {
+        containerRef.current.style.cursor = 'grabbing';
+      }
+    },
+    [onPan, panOffset]
+  );
+
+  /**
+   * Handle mouse move for drag-to-pan
+   */
+  const handleMouseMove = useCallback(
+    (event: MouseEvent) => {
+      if (!isDraggingRef.current || !onPan) return;
+
+      const deltaX = dragStartXRef.current - event.clientX;
+      const deltaTime = pixelDistanceToTime(deltaX);
+      const newPan = dragStartPanRef.current + deltaTime;
+
+      onPan(newPan);
+    },
+    [onPan, pixelDistanceToTime]
+  );
+
+  /**
+   * Handle mouse up to end drag
+   */
+  const handleMouseUp = useCallback(() => {
+    if (isDraggingRef.current) {
+      isDraggingRef.current = false;
+
+      // Restore cursor
+      if (containerRef.current) {
+        containerRef.current.style.cursor = 'grab';
+      }
+    }
+  }, []);
+
+  // Set up global mouse move/up listeners for dragging
+  useEffect(() => {
+    if (!onPan) return;
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [onPan, handleMouseMove, handleMouseUp]);
+
+  /**
+   * Native wheel event handler for trackpad pinch/scroll zoom and horizontal pan
    * Using native event listener with passive: false to prevent default browser zoom
    * when ctrlKey is pressed (trackpad pinch gesture)
    */
   useEffect(() => {
     const container = containerRef.current;
-    if (!container || !onZoomAtPoint) return;
+    if (!container) return;
 
     const handleNativeWheel = (event: WheelEvent) => {
-      // Prevent default browser zoom (ctrlKey + wheel) and page scroll
-      event.preventDefault();
+      // Check if this is a horizontal scroll (trackpad swipe or shift+wheel)
+      const isHorizontalScroll = event.shiftKey || Math.abs(event.deltaX) > Math.abs(event.deltaY);
 
-      // Get the time position at the cursor
-      const time = pixelToTime(event.clientX);
+      if (isHorizontalScroll && onPan) {
+        // Horizontal pan
+        event.preventDefault();
 
-      // Determine zoom direction
-      // Wheel up (negative deltaY) = zoom in
-      // Wheel down (positive deltaY) = zoom out
-      // For trackpad pinch gestures, browsers set ctrlKey=true and deltaY reflects pinch direction
-      const direction: 'in' | 'out' = event.deltaY < 0 ? 'in' : 'out';
+        const deltaX = event.deltaX !== 0 ? event.deltaX : event.deltaY;
+        const deltaTime = pixelDistanceToTime(deltaX);
+        onPan(panOffset + deltaTime);
+      } else if (onZoomAtPoint) {
+        // Vertical scroll = zoom
+        event.preventDefault();
 
-      onZoomAtPoint(time, direction);
+        // Get the time position at the cursor
+        const time = pixelToTime(event.clientX);
+
+        // Determine zoom direction
+        // Wheel up (negative deltaY) = zoom in
+        // Wheel down (positive deltaY) = zoom out
+        // For trackpad pinch gestures, browsers set ctrlKey=true and deltaY reflects pinch direction
+        const direction: 'in' | 'out' = event.deltaY < 0 ? 'in' : 'out';
+
+        onZoomAtPoint(time, direction);
+      }
     };
 
     // Use passive: false to allow preventDefault() for ctrlKey + wheel (browser zoom)
@@ -202,12 +305,14 @@ export function WaveformCanvas({
     return () => {
       container.removeEventListener('wheel', handleNativeWheel);
     };
-  }, [onZoomAtPoint, pixelToTime]);
+  }, [onZoomAtPoint, onPan, pixelToTime, pixelDistanceToTime, panOffset]);
 
   return (
     <div
       ref={containerRef}
       className="w-full flex items-center justify-center"
+      style={{ cursor: onPan ? 'grab' : 'default' }}
+      onMouseDown={handleMouseDown}
     >
       <canvas
         ref={canvasRef}
