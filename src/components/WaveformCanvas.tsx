@@ -1,6 +1,7 @@
 import { useRef, useEffect, useCallback } from 'react';
 import type { WaveformPeaks } from '../types/waveform';
 import type { VisibleRange } from '../types/zoom';
+import type { Marker } from '../types/marker';
 
 export interface WaveformCanvasProps {
   /** Waveform peak data to render */
@@ -21,6 +22,10 @@ export interface WaveformCanvasProps {
   panOffset?: number;
   /** Callback when user clicks to add a marker at a time position */
   onAddMarker?: (time: number) => void;
+  /** Array of markers to render on the waveform */
+  markers?: Marker[];
+  /** Color for marker lines */
+  markerColor?: string;
 }
 
 /**
@@ -37,6 +42,8 @@ export function WaveformCanvas({
   onPan,
   panOffset = 0,
   onAddMarker,
+  markers = [],
+  markerColor = '#f97316', // orange-500
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -149,7 +156,30 @@ export function WaveformCanvas({
     ctx.moveTo(0, centerY);
     ctx.lineTo(width, centerY);
     ctx.stroke();
-  }, [peaks, visibleRange, height, waveformColor, backgroundColor]);
+
+    // Draw markers
+    const rangeStart = visibleRange?.start ?? 0;
+    const rangeEnd = visibleRange?.end ?? duration;
+    const rangeDuration = rangeEnd - rangeStart;
+
+    ctx.strokeStyle = markerColor;
+    ctx.lineWidth = 1.5;
+
+    for (const marker of markers) {
+      // Check if marker is within visible range
+      if (marker.time >= rangeStart && marker.time <= rangeEnd) {
+        // Convert marker time to pixel position
+        const fraction = (marker.time - rangeStart) / rangeDuration;
+        const x = Math.round(fraction * width);
+
+        // Draw vertical line spanning full waveform height
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvasHeight);
+        ctx.stroke();
+      }
+    }
+  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor]);
 
   // Draw on mount and when dependencies change
   useEffect(() => {

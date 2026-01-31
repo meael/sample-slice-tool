@@ -22,7 +22,7 @@ function App() {
   });
 
   // Marker state management
-  const { addMarker, clearMarkers } = useMarkers();
+  const { markers, addMarker, clearMarkers } = useMarkers();
 
   const handleFileLoaded = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -91,6 +91,7 @@ function App() {
         onPan={setPan}
         panOffset={panOffset}
         onAddMarker={addMarker}
+        markers={markers}
       />
     </div>
   );
