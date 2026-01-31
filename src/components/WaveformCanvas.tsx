@@ -3,6 +3,9 @@ import type { WaveformPeaks } from '../types/waveform';
 import type { VisibleRange } from '../types/zoom';
 import type { Marker } from '../types/marker';
 
+/** Hit detection threshold in pixels for selecting markers */
+const MARKER_HIT_THRESHOLD = 10;
+
 export interface WaveformCanvasProps {
   /** Waveform peak data to render */
   peaks: WaveformPeaks;
@@ -26,6 +29,12 @@ export interface WaveformCanvasProps {
   markers?: Marker[];
   /** Color for marker lines */
   markerColor?: string;
+  /** Currently selected marker ID */
+  selectedMarkerId?: string | null;
+  /** Color for selected marker */
+  selectedMarkerColor?: string;
+  /** Callback when user clicks to select a marker (or deselect with null) */
+  onSelectMarker?: (markerId: string | null) => void;
 }
 
 /**
@@ -44,6 +53,9 @@ export function WaveformCanvas({
   onAddMarker,
   markers = [],
   markerColor = '#f97316', // orange-500
+  selectedMarkerId = null,
+  selectedMarkerColor = '#fbbf24', // amber-400
+  onSelectMarker,
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -162,15 +174,17 @@ export function WaveformCanvas({
     const rangeEnd = visibleRange?.end ?? duration;
     const rangeDuration = rangeEnd - rangeStart;
 
-    ctx.strokeStyle = markerColor;
-    ctx.lineWidth = 1.5;
-
     for (const marker of markers) {
       // Check if marker is within visible range
       if (marker.time >= rangeStart && marker.time <= rangeEnd) {
         // Convert marker time to pixel position
         const fraction = (marker.time - rangeStart) / rangeDuration;
         const x = Math.round(fraction * width);
+
+        // Use different style for selected marker
+        const isSelected = marker.id === selectedMarkerId;
+        ctx.strokeStyle = isSelected ? selectedMarkerColor : markerColor;
+        ctx.lineWidth = isSelected ? 2.5 : 1.5;
 
         // Draw vertical line spanning full waveform height
         ctx.beginPath();
@@ -179,7 +193,7 @@ export function WaveformCanvas({
         ctx.stroke();
       }
     }
-  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor]);
+  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor]);
 
   // Draw on mount and when dependencies change
   useEffect(() => {
@@ -237,6 +251,49 @@ export function WaveformCanvas({
   );
 
   /**
+   * Convert a time position to pixel X position
+   */
+  const timeToPixel = useCallback(
+    (time: number): number => {
+      const container = containerRef.current;
+      if (!container) return 0;
+
+      const rect = container.getBoundingClientRect();
+      const rangeStart = visibleRange?.start ?? 0;
+      const rangeEnd = visibleRange?.end ?? peaks.duration;
+      const rangeDuration = rangeEnd - rangeStart;
+
+      const fraction = (time - rangeStart) / rangeDuration;
+      return rect.left + fraction * rect.width;
+    },
+    [visibleRange, peaks.duration]
+  );
+
+  /**
+   * Find the nearest marker to a pixel X position within the hit threshold
+   * Returns the marker ID or null if none found
+   */
+  const findMarkerAtPixel = useCallback(
+    (pixelX: number): string | null => {
+      let nearestMarkerId: string | null = null;
+      let nearestDistance = MARKER_HIT_THRESHOLD;
+
+      for (const marker of markers) {
+        const markerPixelX = timeToPixel(marker.time);
+        const distance = Math.abs(pixelX - markerPixelX);
+
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearestMarkerId = marker.id;
+        }
+      }
+
+      return nearestMarkerId;
+    },
+    [markers, timeToPixel]
+  );
+
+  /**
    * Handle mouse down for drag-to-pan or click-to-add-marker
    */
   const handleMouseDown = useCallback(
@@ -279,17 +336,31 @@ export function WaveformCanvas({
   );
 
   /**
-   * Handle mouse up to end drag or add marker on click
+   * Handle mouse up to end drag, select marker, or add marker on click
    */
   const handleMouseUp = useCallback(
     (event: MouseEvent) => {
       if (isDraggingRef.current) {
-        // If we didn't drag (just clicked), add a marker at the click position
-        if (!hasDraggedRef.current && onAddMarker) {
-          const time = pixelToTime(event.clientX);
-          // Clamp time to valid range (0 to duration)
-          const clampedTime = Math.max(0, Math.min(time, peaks.duration));
-          onAddMarker(clampedTime);
+        // If we didn't drag (just clicked), check for marker selection or add a new marker
+        if (!hasDraggedRef.current) {
+          // First, check if we clicked near an existing marker
+          const clickedMarkerId = findMarkerAtPixel(event.clientX);
+
+          if (clickedMarkerId) {
+            // Select the clicked marker
+            if (onSelectMarker) {
+              onSelectMarker(clickedMarkerId);
+            }
+          } else if (selectedMarkerId && onSelectMarker) {
+            // Clicked empty area - deselect current marker
+            onSelectMarker(null);
+          } else if (onAddMarker) {
+            // No marker nearby and none selected - add a new marker
+            const time = pixelToTime(event.clientX);
+            // Clamp time to valid range (0 to duration)
+            const clampedTime = Math.max(0, Math.min(time, peaks.duration));
+            onAddMarker(clampedTime);
+          }
         }
 
         isDraggingRef.current = false;
@@ -301,7 +372,7 @@ export function WaveformCanvas({
         }
       }
     },
-    [onAddMarker, onPan, pixelToTime, peaks.duration]
+    [onAddMarker, onPan, pixelToTime, peaks.duration, findMarkerAtPixel, onSelectMarker, selectedMarkerId]
   );
 
   // Set up global mouse move/up listeners for dragging and click detection
