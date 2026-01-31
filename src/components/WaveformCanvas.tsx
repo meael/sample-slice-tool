@@ -13,6 +13,8 @@ export interface WaveformCanvasProps {
   waveformColor?: string;
   /** Background color */
   backgroundColor?: string;
+  /** Callback when user wants to zoom at a specific time position */
+  onZoomAtPoint?: (time: number, direction: 'in' | 'out') => void;
 }
 
 /**
@@ -25,6 +27,7 @@ export function WaveformCanvas({
   height = 200,
   waveformColor = '#22d3ee', // cyan-400
   backgroundColor = '#262626', // neutral-800
+  onZoomAtPoint,
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -146,10 +149,56 @@ export function WaveformCanvas({
     return () => window.removeEventListener('resize', handleResize);
   }, [drawWaveform]);
 
+  /**
+   * Convert a pixel X position to time in seconds
+   */
+  const pixelToTime = useCallback(
+    (pixelX: number): number => {
+      const container = containerRef.current;
+      if (!container) return 0;
+
+      const rect = container.getBoundingClientRect();
+      const relativeX = pixelX - rect.left;
+      const fraction = relativeX / rect.width;
+
+      // Calculate time based on visible range
+      const rangeStart = visibleRange?.start ?? 0;
+      const rangeEnd = visibleRange?.end ?? peaks.duration;
+      const rangeDuration = rangeEnd - rangeStart;
+
+      return rangeStart + fraction * rangeDuration;
+    },
+    [visibleRange, peaks.duration]
+  );
+
+  /**
+   * Handle mouse wheel events for zooming
+   */
+  const handleWheel = useCallback(
+    (event: React.WheelEvent<HTMLDivElement>) => {
+      if (!onZoomAtPoint) return;
+
+      // Prevent default scrolling behavior
+      event.preventDefault();
+
+      // Get the time position at the cursor
+      const time = pixelToTime(event.clientX);
+
+      // Determine zoom direction
+      // Wheel up (negative deltaY) = zoom in
+      // Wheel down (positive deltaY) = zoom out
+      const direction: 'in' | 'out' = event.deltaY < 0 ? 'in' : 'out';
+
+      onZoomAtPoint(time, direction);
+    },
+    [onZoomAtPoint, pixelToTime]
+  );
+
   return (
     <div
       ref={containerRef}
       className="w-full flex items-center justify-center"
+      onWheel={handleWheel}
     >
       <canvas
         ref={canvasRef}

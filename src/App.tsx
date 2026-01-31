@@ -3,12 +3,22 @@ import { DropZone } from './components/DropZone';
 import { WaveformCanvas } from './components/WaveformCanvas';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
+import { useZoom } from './hooks/useZoom';
 import type { WaveformPeaks } from './types/waveform';
 
 function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [waveformData, setWaveformData] = useState<WaveformPeaks | null>(null);
+  const [audioDuration, setAudioDuration] = useState<number>(0);
+
+  // Zoom and pan state management
+  const { visibleRange, zoomAtPoint, reset: resetZoom } = useZoom({
+    duration: audioDuration,
+    minZoom: 1,
+    maxZoom: 100,
+    zoomStep: 1.2, // Smoother zoom transitions
+  });
 
   const handleFileLoaded = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -16,7 +26,13 @@ function App() {
 
     try {
       // Decode audio file
-      const { audioBuffer } = await audioService.decodeFile(file);
+      const { audioBuffer, metadata } = await audioService.decodeFile(file);
+
+      // Set audio duration for zoom calculations
+      setAudioDuration(metadata.duration);
+
+      // Reset zoom state for new file
+      resetZoom();
 
       // Extract waveform peaks
       // Use a high resolution for detailed waveform rendering
@@ -37,7 +53,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [resetZoom]);
 
   // Show drop zone if no waveform loaded
   if (!waveformData) {
@@ -65,6 +81,8 @@ function App() {
       <WaveformCanvas
         peaks={waveformData}
         height={200}
+        visibleRange={visibleRange}
+        onZoomAtPoint={zoomAtPoint}
       />
     </div>
   );
