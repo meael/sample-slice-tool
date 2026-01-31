@@ -19,6 +19,8 @@ export interface WaveformCanvasProps {
   onPan?: (offset: number) => void;
   /** Current pan offset (in seconds) - needed for pan calculations */
   panOffset?: number;
+  /** Callback when user clicks to add a marker at a time position */
+  onAddMarker?: (time: number) => void;
 }
 
 /**
@@ -34,6 +36,7 @@ export function WaveformCanvas({
   onZoomAtPoint,
   onPan,
   panOffset = 0,
+  onAddMarker,
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -42,6 +45,9 @@ export function WaveformCanvas({
   const isDraggingRef = useRef(false);
   const dragStartXRef = useRef(0);
   const dragStartPanRef = useRef(0);
+  // Track if mouse moved significantly during drag (to distinguish click from drag)
+  const hasDraggedRef = useRef(false);
+  const CLICK_THRESHOLD = 5; // pixels - movement below this is considered a click
 
   /**
    * Draw the waveform on the canvas
@@ -201,18 +207,17 @@ export function WaveformCanvas({
   );
 
   /**
-   * Handle mouse down for drag-to-pan
+   * Handle mouse down for drag-to-pan or click-to-add-marker
    */
   const handleMouseDown = useCallback(
     (event: React.MouseEvent) => {
-      if (!onPan) return;
-
       isDraggingRef.current = true;
       dragStartXRef.current = event.clientX;
       dragStartPanRef.current = panOffset;
+      hasDraggedRef.current = false;
 
-      // Change cursor to grabbing
-      if (containerRef.current) {
+      // Change cursor to grabbing if pan is enabled
+      if (onPan && containerRef.current) {
         containerRef.current.style.cursor = 'grabbing';
       }
     },
@@ -224,35 +229,53 @@ export function WaveformCanvas({
    */
   const handleMouseMove = useCallback(
     (event: MouseEvent) => {
-      if (!isDraggingRef.current || !onPan) return;
+      if (!isDraggingRef.current) return;
 
       const deltaX = dragStartXRef.current - event.clientX;
-      const deltaTime = pixelDistanceToTime(deltaX);
-      const newPan = dragStartPanRef.current + deltaTime;
 
-      onPan(newPan);
+      // Check if we've moved beyond the click threshold
+      if (Math.abs(deltaX) > CLICK_THRESHOLD) {
+        hasDraggedRef.current = true;
+      }
+
+      // Only pan if we have the callback
+      if (onPan && hasDraggedRef.current) {
+        const deltaTime = pixelDistanceToTime(deltaX);
+        const newPan = dragStartPanRef.current + deltaTime;
+        onPan(newPan);
+      }
     },
     [onPan, pixelDistanceToTime]
   );
 
   /**
-   * Handle mouse up to end drag
+   * Handle mouse up to end drag or add marker on click
    */
-  const handleMouseUp = useCallback(() => {
-    if (isDraggingRef.current) {
-      isDraggingRef.current = false;
+  const handleMouseUp = useCallback(
+    (event: MouseEvent) => {
+      if (isDraggingRef.current) {
+        // If we didn't drag (just clicked), add a marker at the click position
+        if (!hasDraggedRef.current && onAddMarker) {
+          const time = pixelToTime(event.clientX);
+          // Clamp time to valid range (0 to duration)
+          const clampedTime = Math.max(0, Math.min(time, peaks.duration));
+          onAddMarker(clampedTime);
+        }
 
-      // Restore cursor
-      if (containerRef.current) {
-        containerRef.current.style.cursor = 'grab';
+        isDraggingRef.current = false;
+        hasDraggedRef.current = false;
+
+        // Restore cursor if pan is enabled
+        if (onPan && containerRef.current) {
+          containerRef.current.style.cursor = 'grab';
+        }
       }
-    }
-  }, []);
+    },
+    [onAddMarker, onPan, pixelToTime, peaks.duration]
+  );
 
-  // Set up global mouse move/up listeners for dragging
+  // Set up global mouse move/up listeners for dragging and click detection
   useEffect(() => {
-    if (!onPan) return;
-
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
 
@@ -260,7 +283,7 @@ export function WaveformCanvas({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [onPan, handleMouseMove, handleMouseUp]);
+  }, [handleMouseMove, handleMouseUp]);
 
   /**
    * Native wheel event handler for trackpad pinch/scroll zoom and horizontal pan

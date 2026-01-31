@@ -4,6 +4,7 @@ import { WaveformCanvas } from './components/WaveformCanvas';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
 import { useZoom } from './hooks/useZoom';
+import { useMarkers } from './hooks/useMarkers';
 import type { WaveformPeaks } from './types/waveform';
 
 function App() {
@@ -20,6 +21,9 @@ function App() {
     zoomStep: 1.2, // Smoother zoom transitions
   });
 
+  // Marker state management
+  const { addMarker, clearMarkers } = useMarkers();
+
   const handleFileLoaded = useCallback(async (file: File) => {
     setIsLoading(true);
     setError(null);
@@ -31,8 +35,9 @@ function App() {
       // Set audio duration for zoom calculations
       setAudioDuration(metadata.duration);
 
-      // Reset zoom state for new file
+      // Reset zoom state and clear markers for new file
       resetZoom();
+      clearMarkers();
 
       // Extract waveform peaks
       // Use a high resolution for detailed waveform rendering
@@ -53,7 +58,7 @@ function App() {
     } finally {
       setIsLoading(false);
     }
-  }, [resetZoom]);
+  }, [resetZoom, clearMarkers]);
 
   // Show drop zone if no waveform loaded
   if (!waveformData) {
@@ -85,6 +90,7 @@ function App() {
         onZoomAtPoint={zoomAtPoint}
         onPan={setPan}
         panOffset={panOffset}
+        onAddMarker={addMarker}
       />
     </div>
   );
