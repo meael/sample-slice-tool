@@ -202,7 +202,7 @@ export function WaveformCanvas({
         // Use different style for selected marker
         const isSelected = marker.id === selectedMarkerId;
         ctx.strokeStyle = isSelected ? selectedMarkerColor : markerColor;
-        ctx.lineWidth = isSelected ? 2.5 : 1.5;
+        ctx.lineWidth = isSelected ? 2 : 1;
 
         // Draw vertical line spanning full waveform height
         ctx.beginPath();

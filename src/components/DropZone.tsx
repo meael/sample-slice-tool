@@ -140,7 +140,7 @@ export function DropZone({ onFileLoaded }: DropZoneProps) {
         <button
           type="button"
           onClick={handleChooseFileClick}
-          className="px-4 py-2 text-sm text-neutral-300 bg-neutral-700 hover:bg-neutral-600 border border-neutral-600 transition-colors"
+          className="px-4 py-2 text-sm text-neutral-300 bg-neutral-800 hover:bg-neutral-700 border border-neutral-600 transition-colors tracking-wide"
         >
           Choose file
         </button>

@@ -72,7 +72,7 @@ function App() {
           <DropZone onFileLoaded={handleFileLoaded} />
         )}
         {error && (
-          <div className="fixed bottom-4 left-4 right-4 p-3 bg-red-900/80 border border-red-700 text-red-200 text-sm">
+          <div className="fixed bottom-4 left-4 right-4 p-3 bg-red-900 border border-red-700 text-red-200 text-sm">
             {error}
           </div>
         )}

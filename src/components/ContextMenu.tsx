@@ -76,7 +76,7 @@ export function ContextMenu({ x, y, items, onClose }: ContextMenuProps) {
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-32 py-1 bg-neutral-800 border border-neutral-600 shadow-lg"
+      className="fixed z-50 min-w-32 py-1 bg-neutral-800 border border-neutral-600"
       style={{ left: x, top: y }}
     >
       {items.map((item, index) => (
