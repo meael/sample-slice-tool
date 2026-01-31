@@ -37,6 +37,8 @@ export interface WaveformCanvasProps {
   onSelectMarker?: (markerId: string | null) => void;
   /** Callback when user drags a marker to update its position */
   onUpdateMarker?: (markerId: string, time: number) => void;
+  /** Callback when user deletes the selected marker */
+  onDeleteMarker?: (markerId: string) => void;
 }
 
 /**
@@ -59,6 +61,7 @@ export function WaveformCanvas({
   selectedMarkerColor = '#fbbf24', // amber-400
   onSelectMarker,
   onUpdateMarker,
+  onDeleteMarker,
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -487,6 +490,28 @@ export function WaveformCanvas({
       container.removeEventListener('wheel', handleNativeWheel);
     };
   }, [onZoomAtPoint, onPan, pixelToTime, pixelDistanceToTime, panOffset]);
+
+  /**
+   * Handle keyboard events for marker deletion
+   * Delete or Backspace key removes the selected marker
+   */
+  useEffect(() => {
+    if (!onDeleteMarker || !selectedMarkerId) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        // Prevent default browser behavior (e.g., navigating back on Backspace)
+        event.preventDefault();
+        onDeleteMarker(selectedMarkerId);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onDeleteMarker, selectedMarkerId]);
 
   return (
     <div

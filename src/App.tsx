@@ -22,7 +22,7 @@ function App() {
   });
 
   // Marker state management
-  const { markers, selectedMarkerId, addMarker, updateMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
+  const { markers, selectedMarkerId, addMarker, updateMarker, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
 
   const handleFileLoaded = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -95,6 +95,7 @@ function App() {
         selectedMarkerId={selectedMarkerId}
         onSelectMarker={setSelectedMarkerId}
         onUpdateMarker={updateMarker}
+        onDeleteMarker={deleteMarker}
       />
     </div>
   );
