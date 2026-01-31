@@ -35,6 +35,8 @@ export interface WaveformCanvasProps {
   selectedMarkerColor?: string;
   /** Callback when user clicks to select a marker (or deselect with null) */
   onSelectMarker?: (markerId: string | null) => void;
+  /** Callback when user drags a marker to update its position */
+  onUpdateMarker?: (markerId: string, time: number) => void;
 }
 
 /**
@@ -56,6 +58,7 @@ export function WaveformCanvas({
   selectedMarkerId = null,
   selectedMarkerColor = '#fbbf24', // amber-400
   onSelectMarker,
+  onUpdateMarker,
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -67,6 +70,10 @@ export function WaveformCanvas({
   // Track if mouse moved significantly during drag (to distinguish click from drag)
   const hasDraggedRef = useRef(false);
   const CLICK_THRESHOLD = 5; // pixels - movement below this is considered a click
+
+  // Marker drag state
+  const isDraggingMarkerRef = useRef(false);
+  const draggingMarkerIdRef = useRef<string | null>(null);
 
   /**
    * Draw the waveform on the canvas
@@ -294,28 +301,65 @@ export function WaveformCanvas({
   );
 
   /**
-   * Handle mouse down for drag-to-pan or click-to-add-marker
+   * Handle mouse down for drag-to-pan, marker drag, or click-to-add-marker
    */
   const handleMouseDown = useCallback(
     (event: React.MouseEvent) => {
-      isDraggingRef.current = true;
-      dragStartXRef.current = event.clientX;
-      dragStartPanRef.current = panOffset;
-      hasDraggedRef.current = false;
+      // Check if clicking on a selected marker to start dragging it
+      const clickedMarkerId = findMarkerAtPixel(event.clientX);
 
-      // Change cursor to grabbing if pan is enabled
-      if (onPan && containerRef.current) {
-        containerRef.current.style.cursor = 'grabbing';
+      if (clickedMarkerId && clickedMarkerId === selectedMarkerId && onUpdateMarker) {
+        // Start dragging the selected marker
+        isDraggingMarkerRef.current = true;
+        draggingMarkerIdRef.current = clickedMarkerId;
+        hasDraggedRef.current = false;
+        dragStartXRef.current = event.clientX;
+
+        // Change cursor to indicate drag mode
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'ew-resize';
+        }
+      } else {
+        // Normal pan/click behavior
+        isDraggingRef.current = true;
+        dragStartXRef.current = event.clientX;
+        dragStartPanRef.current = panOffset;
+        hasDraggedRef.current = false;
+
+        // Change cursor to grabbing if pan is enabled
+        if (onPan && containerRef.current) {
+          containerRef.current.style.cursor = 'grabbing';
+        }
       }
     },
-    [onPan, panOffset]
+    [onPan, panOffset, findMarkerAtPixel, selectedMarkerId, onUpdateMarker]
   );
 
   /**
-   * Handle mouse move for drag-to-pan
+   * Handle mouse move for drag-to-pan or marker dragging
    */
   const handleMouseMove = useCallback(
     (event: MouseEvent) => {
+      // Handle marker dragging
+      if (isDraggingMarkerRef.current && draggingMarkerIdRef.current && onUpdateMarker) {
+        const deltaX = event.clientX - dragStartXRef.current;
+
+        // Check if we've moved beyond the click threshold
+        if (Math.abs(deltaX) > CLICK_THRESHOLD) {
+          hasDraggedRef.current = true;
+        }
+
+        if (hasDraggedRef.current) {
+          // Calculate new marker time from current mouse position
+          const newTime = pixelToTime(event.clientX);
+          // Clamp to valid range (0 to duration)
+          const clampedTime = Math.max(0, Math.min(newTime, peaks.duration));
+          onUpdateMarker(draggingMarkerIdRef.current, clampedTime);
+        }
+        return;
+      }
+
+      // Handle pan dragging
       if (!isDraggingRef.current) return;
 
       const deltaX = dragStartXRef.current - event.clientX;
@@ -332,7 +376,7 @@ export function WaveformCanvas({
         onPan(newPan);
       }
     },
-    [onPan, pixelDistanceToTime]
+    [onPan, pixelDistanceToTime, onUpdateMarker, pixelToTime, peaks.duration]
   );
 
   /**
@@ -340,6 +384,19 @@ export function WaveformCanvas({
    */
   const handleMouseUp = useCallback(
     (event: MouseEvent) => {
+      // Handle end of marker drag
+      if (isDraggingMarkerRef.current) {
+        isDraggingMarkerRef.current = false;
+        draggingMarkerIdRef.current = null;
+        hasDraggedRef.current = false;
+
+        // Restore cursor
+        if (containerRef.current) {
+          containerRef.current.style.cursor = onPan ? 'grab' : 'default';
+        }
+        return;
+      }
+
       if (isDraggingRef.current) {
         // If we didn't drag (just clicked), check for marker selection or add a new marker
         if (!hasDraggedRef.current) {
