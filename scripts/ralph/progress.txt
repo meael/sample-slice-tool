@@ -1,0 +1,24 @@
+# Ralph Progress Log
+Started: Sun Feb  1 12:05:53 EET 2026
+---
+
+## 2026-02-01 - US-004
+- Added close icon component for markers in WaveformCanvas
+- Close icon (×) renders as HTML overlay positioned above each marker
+- Uses Tailwind classes for styling: 16x16px rounded-full, neutral-700 background, neutral-300 text
+- Icon positioned centered horizontally above marker line using transform translateX(-50%)
+- Added containerWidth state to enable positioning calculations during render
+- Files changed: `src/components/WaveformCanvas.tsx`, `scripts/ralph/prd.json`
+- **Learnings for future iterations:**
+  - Cannot access refs during render in React - use state for values needed in JSX
+  - Track container width in state (updated in drawWaveform) for overlay positioning
+  - Use `getMarkerPixelX` helper with containerWidth state to calculate marker positions
+  - Use `isMarkerVisible` helper to filter markers outside visible range
+  - HTML overlays with position:absolute work well for interactive elements on canvas
+
+## 2026-02-01 - US-005
+- Close icon rendering on all markers was completed as part of US-004
+- Verified: Icons render on every marker, positions update with zoom/pan
+- No additional code changes needed
+- Files changed: `scripts/ralph/prd.json`
+---
