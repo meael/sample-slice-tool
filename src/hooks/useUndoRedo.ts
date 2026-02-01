@@ -20,6 +20,8 @@ export interface UndoRedoResult<T> {
   state: T;
   /** Update state (pushes current to history) */
   setState: (newState: T | ((prev: T) => T)) => void;
+  /** Update state without creating a history entry (for intermediate updates) */
+  setStateWithoutHistory: (newState: T | ((prev: T) => T)) => void;
   /** Whether undo is available */
   canUndo: boolean;
   /** Whether redo is available */
@@ -134,9 +136,33 @@ export function useUndoRedo<T>(
     }));
   }, []);
 
+  const setStateWithoutHistory = useCallback(
+    (newState: T | ((prev: T) => T)) => {
+      setHistory((prev) => {
+        const resolvedState =
+          typeof newState === 'function'
+            ? (newState as (prev: T) => T)(prev.present)
+            : newState;
+
+        // Don't update if state hasn't changed
+        if (resolvedState === prev.present) {
+          return prev;
+        }
+
+        // Update present without modifying past or future
+        return {
+          ...prev,
+          present: resolvedState,
+        };
+      });
+    },
+    []
+  );
+
   return {
     state: history.present,
     setState,
+    setStateWithoutHistory,
     canUndo: history.past.length > 0,
     canRedo: history.future.length > 0,
     undo,
