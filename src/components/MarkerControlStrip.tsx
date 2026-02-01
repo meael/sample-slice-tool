@@ -47,18 +47,10 @@ function EditableName({ name, markerId, markerIndex, onUpdateName }: EditableNam
     }
   }, [isEditing]);
 
-  // Update editValue when name prop changes (e.g., from external update)
-  useEffect(() => {
-    if (!isEditing) {
-      setEditValue(name);
-    }
-  }, [name, isEditing]);
-
   const handleSave = useCallback(() => {
     const trimmedValue = editValue.trim();
     const finalName = trimmedValue || `Section ${markerIndex + 1}`;
     onUpdateName(markerId, finalName);
-    setEditValue(finalName);
     setIsEditing(false);
   }, [editValue, markerId, markerIndex, onUpdateName]);
 
@@ -79,8 +71,9 @@ function EditableName({ name, markerId, markerIndex, onUpdateName }: EditableNam
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
+    setEditValue(name);
     setIsEditing(true);
-  }, []);
+  }, [name]);
 
   if (isEditing) {
     return (
