@@ -6,8 +6,10 @@ import type { Section } from '../types/section';
 import type { PlaybackState } from '../hooks/usePlayback';
 import { ContextMenu } from './ContextMenu';
 
-/** Hit detection threshold in pixels for selecting markers */
-const MARKER_HIT_THRESHOLD = 10;
+/** Hit detection threshold in pixels for selecting markers
+ * Expanded to ~14-16px to provide a larger grab area beyond the visible 1-2px marker line
+ */
+const MARKER_HIT_THRESHOLD = 16;
 
 export interface WaveformCanvasProps {
   /** Waveform peak data to render */
