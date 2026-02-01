@@ -194,8 +194,9 @@ export function MarkerControlStrip({
           >
             {/* Top row: keyboard label OR close icon (centered above marker line) */}
             {/* Control container handles hover for swapping label/close */}
+            {/* Uses min-w/min-h to create stable hover area that prevents flickering */}
             <div
-              className="relative flex items-center justify-center mt-[5px]"
+              className="relative flex items-center justify-center mt-[3px] min-w-[20px] min-h-[18px]"
               style={{ cursor: isDisabledSection ? 'not-allowed' : 'default' }}
               onMouseEnter={() => setHoveredControlId(marker.id)}
               onMouseLeave={() => setHoveredControlId(null)}
@@ -204,13 +205,14 @@ export function MarkerControlStrip({
               {hasKeyboardLabel ? (
                 <>
                   {/* Keyboard label - visible by default, hidden on hover */}
+                  {/* pointer-events: none prevents this element from causing hover state changes */}
                   <div
                     className={`flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-opacity duration-150 ${
                       pressedKeyboardIndex === keyboardIndex
                         ? 'bg-cyan-400 text-neutral-900 border-cyan-300 scale-110'
                         : 'bg-neutral-600 text-neutral-200 border-neutral-500'
                     }`}
-                    style={{ opacity: isControlHovered ? 0 : 1 }}
+                    style={{ opacity: isControlHovered ? 0 : 1, pointerEvents: 'none' }}
                     title={`Press ${keyboardIndex} to play`}
                   >
                     {keyboardIndex}
