@@ -155,6 +155,8 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
       if (newCurrentTime >= segmentEndTimeRef.current) {
         setCurrentTime(segmentEndTimeRef.current);
         setState('idle');
+        setSegmentStart(0);
+        setSegmentEnd(0);
         isPlayingRef.current = false;
         cleanupSourceNodeRef.current();
         return;
@@ -250,6 +252,8 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
         if (sourceNodeRef.current === sourceNode) {
           setState('idle');
           setCurrentTime(0);
+          setSegmentStart(0);
+          setSegmentEnd(0);
           isPlayingRef.current = false;
           cleanupSourceNode();
         }
@@ -340,6 +344,8 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
       if (sourceNodeRef.current === sourceNode) {
         setState('idle');
         setCurrentTime(0);
+        setSegmentStart(0);
+        setSegmentEnd(0);
         isPlayingRef.current = false;
         cleanupSourceNode();
       }
