@@ -6,6 +6,7 @@ import { FileLoaderButton } from './components/FileLoaderButton';
 import { ExportAllButton, type ExportAllFormat } from './components/ExportAllButton';
 import { ExportProgressOverlay } from './components/ExportProgressOverlay';
 import { UndoRedoButtons } from './components/UndoRedoButtons';
+import { ConfirmResetDialog } from './components/ConfirmResetDialog';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
 import { encodeWav, encodeMp3, sanitizeFilename, createZipArchive } from './services/audioExport';
@@ -79,6 +80,25 @@ function App() {
 
   // Track which keyboard index was pressed (for blink animation)
   const [pressedKeyboardIndex, setPressedKeyboardIndex] = useState<number | null>(null);
+
+  // Reset confirmation dialog state
+  const [showResetDialog, setShowResetDialog] = useState(false);
+
+  // Handler to show reset confirmation dialog
+  const handleResetClick = useCallback(() => {
+    setShowResetDialog(true);
+  }, []);
+
+  // Handler to confirm reset (clears markers and closes dialog)
+  const handleConfirmReset = useCallback(() => {
+    reset();
+    setShowResetDialog(false);
+  }, [reset]);
+
+  // Handler to cancel reset (just closes dialog)
+  const handleCancelReset = useCallback(() => {
+    setShowResetDialog(false);
+  }, []);
 
   // Handle export of individual sections
   const handleExportSection = useCallback(async (sectionId: string, format: ExportFormat) => {
@@ -270,7 +290,7 @@ function App() {
             canRedo={canRedo}
             onUndo={undo}
             onRedo={redo}
-            onReset={reset}
+            onReset={handleResetClick}
             disabled={playbackState === 'playing'}
           />
         )}
@@ -341,6 +361,13 @@ function App() {
           onDismiss={hideToast}
         />
       )}
+
+      {/* Reset confirmation dialog */}
+      <ConfirmResetDialog
+        isVisible={showResetDialog}
+        onConfirm={handleConfirmReset}
+        onCancel={handleCancelReset}
+      />
     </div>
   );
 }
