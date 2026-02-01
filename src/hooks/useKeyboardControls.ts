@@ -9,6 +9,8 @@ export interface UseKeyboardControlsOptions {
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
+  /** Callback when a section key (1-9) is pressed on an enabled section */
+  onSectionKeyPressed?: (keyboardIndex: number) => void;
 }
 
 /**
@@ -37,6 +39,7 @@ export function useKeyboardControls({
   onPause,
   onResume,
   onStop,
+  onSectionKeyPressed,
 }: UseKeyboardControlsOptions): void {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -87,10 +90,15 @@ export function useKeyboardControls({
         // Prevent default behavior for number keys
         event.preventDefault();
 
+        // Notify about section key press (for visual feedback like blink animation)
+        if (onSectionKeyPressed) {
+          onSectionKeyPressed(keyNumber);
+        }
+
         onPlaySegment(section.startTime, section.endTime);
       }
     },
-    [sections, playbackState, onPlaySegment, onPause, onResume, onStop]
+    [sections, playbackState, onPlaySegment, onPause, onResume, onStop, onSectionKeyPressed]
   );
 
   useEffect(() => {

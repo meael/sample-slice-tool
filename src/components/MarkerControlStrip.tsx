@@ -26,6 +26,8 @@ export interface MarkerControlStripProps {
   exportingSectionId?: string | null;
   /** Callback when user toggles a section's enabled state */
   onToggleSectionEnabled?: (sectionId: string) => void;
+  /** Keyboard index that was just pressed (for blink animation) */
+  pressedKeyboardIndex?: number | null;
 }
 
 /**
@@ -43,6 +45,7 @@ export function MarkerControlStrip({
   onExportSection,
   exportingSectionId,
   onToggleSectionEnabled,
+  pressedKeyboardIndex,
 }: MarkerControlStripProps) {
   /**
    * Calculate the pixel X position for a time value
@@ -174,7 +177,11 @@ export function MarkerControlStrip({
             {/* Keyboard badge - only show for enabled sections */}
             {keyboardIndex !== undefined && (
               <div
-                className="flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded bg-neutral-600 text-neutral-200 text-[10px] font-medium leading-none select-none border border-neutral-500 shadow-sm"
+                className={`flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-all duration-200 ${
+                  pressedKeyboardIndex === keyboardIndex
+                    ? 'bg-cyan-400 text-neutral-900 border-cyan-300 scale-110'
+                    : 'bg-neutral-600 text-neutral-200 border-neutral-500'
+                }`}
                 title={`Press ${keyboardIndex} to play`}
               >
                 {keyboardIndex}
