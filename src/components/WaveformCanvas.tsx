@@ -89,6 +89,9 @@ export function WaveformCanvas({
   // Preview marker state - tracks hover time for visual preview
   const [hoverTime, setHoverTime] = useState<number | null>(null);
 
+  // Container width state for close icon positioning
+  const [containerWidth, setContainerWidth] = useState(0);
+
   /**
    * Draw the waveform on the canvas
    */
@@ -104,6 +107,9 @@ export function WaveformCanvas({
     const rect = container.getBoundingClientRect();
     const width = rect.width;
     const canvasHeight = height;
+
+    // Update container width state for close icon positioning
+    setContainerWidth(width);
 
     // Set canvas size with device pixel ratio for crisp rendering
     const dpr = window.devicePixelRatio || 1;
@@ -614,11 +620,41 @@ export function WaveformCanvas({
     setContextMenu(null);
   }, [contextMenu, onDeleteMarker]);
 
+  /**
+   * Calculate the pixel X position of a marker relative to the container
+   * Used for positioning close icon overlays
+   */
+  const getMarkerPixelX = useCallback(
+    (time: number): number => {
+      if (containerWidth === 0) return 0;
+
+      const rangeStart = visibleRange?.start ?? 0;
+      const rangeEnd = visibleRange?.end ?? peaks.duration;
+      const rangeDuration = rangeEnd - rangeStart;
+
+      const fraction = (time - rangeStart) / rangeDuration;
+      return fraction * containerWidth;
+    },
+    [visibleRange, peaks.duration, containerWidth]
+  );
+
+  /**
+   * Check if a marker is within the visible range
+   */
+  const isMarkerVisible = useCallback(
+    (time: number): boolean => {
+      const rangeStart = visibleRange?.start ?? 0;
+      const rangeEnd = visibleRange?.end ?? peaks.duration;
+      return time >= rangeStart && time <= rangeEnd;
+    },
+    [visibleRange, peaks.duration]
+  );
+
   return (
     <>
       <div
         ref={containerRef}
-        className="w-full flex items-center justify-center"
+        className="w-full flex items-center justify-center relative"
         style={{ cursor: onPan ? 'grab' : 'default' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleContainerMouseMove}
@@ -629,6 +665,24 @@ export function WaveformCanvas({
           ref={canvasRef}
           className="block"
         />
+        {/* Close icon overlays for markers */}
+        {markers.map((marker) => {
+          if (!isMarkerVisible(marker.time)) return null;
+          const pixelX = getMarkerPixelX(marker.time);
+          return (
+            <div
+              key={`close-${marker.id}`}
+              className="absolute flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none"
+              style={{
+                left: pixelX,
+                top: 4,
+                transform: 'translateX(-50%)',
+              }}
+            >
+              ×
+            </div>
+          );
+        })}
       </div>
       {contextMenu && (
         <ContextMenu
