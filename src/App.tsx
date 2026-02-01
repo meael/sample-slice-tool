@@ -1,10 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { DropZone } from './components/DropZone';
 import { WaveformCanvas } from './components/WaveformCanvas';
-import { MarkerControlStrip } from './components/MarkerControlStrip';
+import { MarkerControlStrip, type ExportFormat } from './components/MarkerControlStrip';
 import { FileLoaderButton } from './components/FileLoaderButton';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
+import { encodeWav, sanitizeFilename } from './services/audioExport';
+import { saveAs } from 'file-saver';
 import { useZoom } from './hooks/useZoom';
 import { useMarkers } from './hooks/useMarkers';
 import { usePlayback } from './hooks/usePlayback';
@@ -42,6 +44,30 @@ function App() {
     onResume: resume,
     onStop: stop,
   });
+
+  // Handle export of individual marker sections
+  const handleExportMarker = useCallback((markerId: string, format: ExportFormat) => {
+    if (!audioBuffer) return;
+
+    // Find the marker and its index
+    const markerIndex = markers.findIndex(m => m.id === markerId);
+    if (markerIndex === -1) return;
+
+    const marker = markers[markerIndex];
+
+    // Calculate section boundaries: this marker's time to next marker's time (or end)
+    const startTime = marker.time;
+    const endTime = markerIndex + 1 < markers.length
+      ? markers[markerIndex + 1].time
+      : audioDuration;
+
+    // Only support WAV for now (US-009); MP3 will be added in US-010
+    if (format === 'wav') {
+      const blob = encodeWav(audioBuffer, startTime, endTime);
+      const filename = `${sanitizeFilename(marker.name)}.wav`;
+      saveAs(blob, filename);
+    }
+  }, [audioBuffer, markers, audioDuration]);
 
   // Waveform container ref and width for MarkerControlStrip
   const waveformContainerRef = useRef<HTMLDivElement>(null);
@@ -141,6 +167,7 @@ function App() {
             duration={audioDuration}
             onDeleteMarker={deleteMarker}
             onUpdateMarkerName={updateMarkerName}
+            onExportMarker={handleExportMarker}
             playbackState={playbackState}
             playbackSegmentStart={segmentStart}
             playbackSegmentEnd={segmentEnd}
