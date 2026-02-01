@@ -83,3 +83,27 @@
   - Use Tailwind transition-colors for smooth border/background changes during drag
   - DropZone accepts onFileLoaded prop callback - use in App.tsx to wire up AudioService
 ---
+
+## 2026-02-01 - US-007 through US-019 (PRD Status Update)
+- What was implemented: Verified that all remaining user stories (US-007 through US-019) were already implemented but not marked as passing in the PRD. Updated PRD to reflect actual implementation status.
+- Implementations found:
+  - US-007 (File picker button): Already in DropZone.tsx with hidden input and "Choose file" button
+  - US-008 (Basic waveform canvas rendering): WaveformCanvas.tsx with Canvas 2D API, responsive resize handling
+  - US-009 (Zoom with mouse wheel): Native wheel event handler in WaveformCanvas with cursor-centered zoom
+  - US-010 (Zoom with trackpad gestures): Same wheel handler supports ctrlKey pinch gestures
+  - US-011 (Horizontal pan when zoomed): Horizontal scroll/drag panning with boundary clamping
+  - US-012 (Add marker on click): Click handler with time conversion and auto-selection
+  - US-013 (Render markers on waveform): Canvas rendering with orange (#f97316) color, visible at all zoom levels
+  - US-014 (Select marker on click): 10px hit threshold, single selection, deselect on empty click
+  - US-015 (Move marker by dragging): Selected marker draggable with ew-resize cursor
+  - US-016 (Delete marker with keyboard): Delete/Backspace keyboard handler
+  - US-017 (Delete marker with context menu): ContextMenu.tsx with minimal styling
+  - US-018 (Load new file replaces current): FileLoaderButton.tsx, state reset in App.tsx
+  - US-019 (Visual polish and design system): Dark background, cyan waveform, orange markers, monospace font
+- Files changed:
+  - prd.json: Updated passes: true for US-007 through US-019
+- **Learnings for future iterations:**
+  - Git commit history shows features were committed individually but PRD status was not updated
+  - Always verify PRD passes status matches actual implementation before assuming work is incomplete
+  - WaveformCanvas is the main component containing zoom, pan, markers, and all interactivity
+---
