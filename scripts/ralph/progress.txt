@@ -1,71 +1,24 @@
 # Ralph Progress Log
-Started: Sat Feb  1 2026
+Started: Sun Feb  1 17:55:14 EET 2026
 
 ## Codebase Patterns
-- Use `import type` for type-only imports (verbatimModuleSyntax is enabled)
-- Markers are the source of truth - Sections are derived from markers via getSections utility
-- useMarkers hook follows pattern: add action to MarkersActions interface, implement callback with useCallback, include in return object
-- When adding properties to Marker, make optional with `?` for backwards compatibility
-- Section properties are not optional (unlike Marker) - use `boolean` not `boolean?`
-- getSections is the single point where Marker -> Section transformation happens
-- SectionHeader follows pattern: section prop changes -> update start marker via callback -> sections recalculate
-- Button icons use inline SVG for consistency (no external icon library)
-- Color states: cyan (text-cyan-400) for enabled, gray (text-neutral-500) for disabled
-- Toggle buttons use onClick with e.stopPropagation() to prevent waveform interaction
-- Z-index layering: z-10 (waveform) < z-20 (control strip) < z-50 (popovers/context menus)
-- useKeyboardControls receives all sections, filtering happens inside handleKeyDown callback
-- Filtering with `sections.filter(s => s.enabled)` creates dynamic keyboard mapping
-- Keyboard index computation happens in MarkerControlStrip (parent) and is passed down via props
-- SectionHeader uses section.id for callbacks (not marker.id like MarkerControlStrip)
-- Position calculation uses getPixelX helper to convert time to pixel position
-- SectionDropdown component pattern: internal state, click-outside close, z-index 40, items/children props
+- Markers are managed via `useMarkers` hook in `src/hooks/useMarkers.ts`
+- Visual marker rendering happens in `WaveformCanvas.tsx` via canvas drawing in `drawWaveform`
+- Marker state includes `draggingMarkerIdRef` (ref for interaction) and `draggingMarkerId` (state for re-renders)
+- Use state for visual updates that need re-renders, refs for values that change during mouse events
 
----
-
-## 2026-02-01 - US-003
-- Implemented dropdown menu content with actions and keyboard shortcut display
-- Files modified: src/components/SectionDropdown.tsx, src/components/SectionHeader.tsx
-- **Changes:**
-  - Added `header` prop to SectionDropdown for displaying keyboard shortcut info
-  - Built dropdown menu items using useMemo with Download and Enable/Disable actions
-  - Download action triggers onExport callback with 'wav' format
-  - Enable/Disable label changes based on section.enabled state
-  - Header shows "Shortcut: N" only when keyboardIndex is defined (enabled sections only)
-  - Removed underscore prefixes from props (now actively used)
-- **Learnings for future iterations:**
-  - useMemo for dropdown items prevents unnecessary re-renders
-  - Disabled sections don't have keyboard shortcuts, so header is conditionally rendered
-  - Menu items close automatically via handleItemClick in SectionDropdown
----
-
-## 2026-02-01 - US-002
-- Added dropdown trigger to section header, consolidating section actions
-- Files modified: src/components/SectionHeader.tsx
-- **Changes:**
-  - Integrated SectionDropdown component inline after section name
-  - Removed standalone ExportDropdown, EnableToggle, and KeyboardBadge components
-  - Simplified layout calculation (now only accounts for dropdown arrow width)
-  - Props preserved with underscore prefix for US-003 implementation
-- **Learnings for future iterations:**
-  - When removing components, prefix unused props with underscore to satisfy TypeScript
-  - Dropdown arrow (▼) is rendered by SectionDropdown component default trigger
-  - Browser verification essential to ensure click targets don't overlap with waveform
 ---
 
 ## 2026-02-01 - US-001
-- Implemented SectionDropdown reusable dropdown menu component
-- Files created: src/components/SectionDropdown.tsx
-- **Features:**
-  - Internal open/close state management with useState
-  - Click outside detection via useEffect with mousedown listener
-  - Escape key closes menu
-  - z-index 40 (higher than control strip z-30)
-  - Accepts items prop (SectionDropdownItem[]) or children for custom content
-  - Menu items rendered as text buttons with hover state
-  - stopPropagation on all interactions to prevent waveform interference
+- Removed persistent marker selection state - markers now only show active styling during drag
+- Changed `handleMouseDown` to allow dragging any marker (not just selected ones)
+- Added `draggingMarkerId` state for visual feedback during drag only
+- Removed keyboard Delete/Backspace deletion (users use context menu or × button instead)
+- Updated `handleMouseUp` to not select markers on click
+- Files changed:
+  - `src/components/WaveformCanvas.tsx`
 - **Learnings for future iterations:**
-  - Used setTimeout(0) to prevent immediate close from triggering click
-  - Children can be a function receiving closeDropdown callback for custom content
-  - Exported SectionDropdownItem interface for type reuse
+  - The `selectedMarkerId` prop and `onSelectMarker` callback still exist in props interface but are no longer used - left for backwards compatibility
+  - Visual active state uses `draggingMarkerId` state variable (triggers re-render) while drag detection uses `draggingMarkerIdRef` (no re-render needed during mouse events)
+  - Markers can be deleted via: context menu (right-click) or × button in MarkerControlStrip
 ---
-

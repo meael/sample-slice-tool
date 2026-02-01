@@ -70,9 +70,9 @@ export function WaveformCanvas({
   onAddMarker,
   markers = [],
   markerColor = '#f97316', // orange-500
-  selectedMarkerId = null,
-  selectedMarkerColor = '#fbbf24', // amber-400
-  onSelectMarker,
+  // selectedMarkerId not used - active state only during drag
+  selectedMarkerColor = '#fbbf24', // amber-400 (used for drag active state)
+  // onSelectMarker not used - no persistent selection
   onUpdateMarker,
   onDeleteMarker,
   playbackState = 'idle',
@@ -105,6 +105,9 @@ export function WaveformCanvas({
 
   // Preview marker state - tracks hover time for visual preview
   const [hoverTime, setHoverTime] = useState<number | null>(null);
+
+  // Currently dragging marker ID - for active styling during drag only
+  const [draggingMarkerId, setDraggingMarkerId] = useState<string | null>(null);
 
 
   /**
@@ -286,10 +289,10 @@ export function WaveformCanvas({
         const fraction = (marker.time - rangeStart) / rangeDuration;
         const x = Math.round(fraction * width);
 
-        // Use different style for selected marker
-        const isSelected = marker.id === selectedMarkerId;
-        ctx.strokeStyle = isSelected ? selectedMarkerColor : markerColor;
-        ctx.lineWidth = isSelected ? 2 : 1;
+        // Use different style for marker being dragged (active state only during drag)
+        const isDragging = marker.id === draggingMarkerId;
+        ctx.strokeStyle = isDragging ? selectedMarkerColor : markerColor;
+        ctx.lineWidth = isDragging ? 2 : 1;
 
         // Draw vertical line spanning full waveform height
         ctx.beginPath();
@@ -313,7 +316,7 @@ export function WaveformCanvas({
       ctx.lineTo(x, canvasHeight);
       ctx.stroke();
     }
-  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor, hoverTime, playbackState, playbackCurrentTime, playbackSegmentStart, playbackSegmentEnd, sections]);
+  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, draggingMarkerId, selectedMarkerColor, hoverTime, playbackState, playbackCurrentTime, playbackSegmentStart, playbackSegmentEnd, sections]);
 
   // Draw on mount and when dependencies change
   useEffect(() => {
@@ -448,11 +451,11 @@ export function WaveformCanvas({
    */
   const handleMouseDown = useCallback(
     (event: React.MouseEvent) => {
-      // Check if clicking on a selected marker to start dragging it
+      // Check if clicking on any marker to start dragging it
       const clickedMarkerId = findMarkerAtPixel(event.clientX);
 
-      if (clickedMarkerId && clickedMarkerId === selectedMarkerId && onUpdateMarker) {
-        // Start dragging the selected marker
+      if (clickedMarkerId && onUpdateMarker) {
+        // Start dragging the clicked marker (no selection required)
         isDraggingMarkerRef.current = true;
         draggingMarkerIdRef.current = clickedMarkerId;
         hasDraggedRef.current = false;
@@ -475,7 +478,7 @@ export function WaveformCanvas({
         }
       }
     },
-    [onPan, panOffset, findMarkerAtPixel, selectedMarkerId, onUpdateMarker]
+    [onPan, panOffset, findMarkerAtPixel, onUpdateMarker]
   );
 
   /**
@@ -490,6 +493,8 @@ export function WaveformCanvas({
         // Check if we've moved beyond the click threshold
         if (Math.abs(deltaX) > CLICK_THRESHOLD) {
           hasDraggedRef.current = true;
+          // Set active styling when drag actually starts (past threshold)
+          setDraggingMarkerId(draggingMarkerIdRef.current);
         }
 
         if (hasDraggedRef.current) {
@@ -523,7 +528,7 @@ export function WaveformCanvas({
   );
 
   /**
-   * Handle mouse up to end drag, select marker, or add marker on click
+   * Handle mouse up to end drag or add marker on click
    */
   const handleMouseUp = useCallback(
     (event: MouseEvent) => {
@@ -533,6 +538,9 @@ export function WaveformCanvas({
         draggingMarkerIdRef.current = null;
         hasDraggedRef.current = false;
 
+        // Trigger redraw to clear active styling
+        setDraggingMarkerId(null);
+
         // Restore cursor
         if (containerRef.current) {
           containerRef.current.style.cursor = onPan ? 'grab' : 'default';
@@ -541,26 +549,19 @@ export function WaveformCanvas({
       }
 
       if (isDraggingRef.current) {
-        // If we didn't drag (just clicked), check for marker selection or add a new marker
+        // If we didn't drag (just clicked), check if we should add a new marker
         if (!hasDraggedRef.current) {
           // First, check if we clicked near an existing marker
           const clickedMarkerId = findMarkerAtPixel(event.clientX);
 
-          if (clickedMarkerId) {
-            // Select the clicked marker
-            if (onSelectMarker) {
-              onSelectMarker(clickedMarkerId);
-            }
-          } else if (selectedMarkerId && onSelectMarker) {
-            // Clicked empty area - deselect current marker
-            onSelectMarker(null);
-          } else if (onAddMarker) {
-            // No marker nearby and none selected - add a new marker
+          if (!clickedMarkerId && onAddMarker) {
+            // No marker nearby - add a new marker
             const time = pixelToTime(event.clientX);
             // Clamp time to valid range (0 to duration)
             const clampedTime = Math.max(0, Math.min(time, peaks.duration));
             onAddMarker(clampedTime);
           }
+          // Clicking on a marker does nothing (no selection)
         }
 
         isDraggingRef.current = false;
@@ -572,7 +573,7 @@ export function WaveformCanvas({
         }
       }
     },
-    [onAddMarker, onPan, pixelToTime, peaks.duration, findMarkerAtPixel, onSelectMarker, selectedMarkerId]
+    [onAddMarker, onPan, pixelToTime, peaks.duration, findMarkerAtPixel]
   );
 
   // Set up global mouse move/up listeners for dragging and click detection
@@ -631,27 +632,8 @@ export function WaveformCanvas({
     };
   }, [onZoomAtPoint, onPan, pixelToTime, pixelDistanceToTime, panOffset]);
 
-  /**
-   * Handle keyboard events for marker deletion
-   * Delete or Backspace key removes the selected marker
-   */
-  useEffect(() => {
-    if (!onDeleteMarker || !selectedMarkerId) return;
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Delete' || event.key === 'Backspace') {
-        // Prevent default browser behavior (e.g., navigating back on Backspace)
-        event.preventDefault();
-        onDeleteMarker(selectedMarkerId);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [onDeleteMarker, selectedMarkerId]);
+  // Note: Keyboard deletion (Delete/Backspace) removed since there's no persistent selection.
+  // Users can delete markers via the context menu (right-click) or the × button in MarkerControlStrip.
 
   /**
    * Handle right-click (context menu) on markers
@@ -671,14 +653,10 @@ export function WaveformCanvas({
           y: event.clientY,
           markerId: clickedMarkerId,
         });
-
-        // Also select the marker
-        if (onSelectMarker) {
-          onSelectMarker(clickedMarkerId);
-        }
+        // No marker selection - context menu is independent of selection state
       }
     },
-    [findMarkerAtPixel, onSelectMarker]
+    [findMarkerAtPixel]
   );
 
   /**
