@@ -77,6 +77,24 @@ export function MarkerControlStrip({
     return endTime > rangeStart && startTime < rangeEnd;
   };
 
+  /**
+   * Build a map from section ID to keyboard index (1-9) for enabled sections only.
+   * Enabled sections get keyboard numbers 1-9 based on their position order.
+   * Returns undefined for disabled sections or if index > 9.
+   */
+  const getKeyboardIndexMap = (): Map<string, number> => {
+    const map = new Map<string, number>();
+    const enabledSections = sections.filter(s => s.enabled);
+    enabledSections.forEach((section, index) => {
+      if (index < 9) {
+        map.set(section.id, index + 1); // 1-indexed for keyboard display
+      }
+    });
+    return map;
+  };
+
+  const keyboardIndexMap = getKeyboardIndexMap();
+
   return (
     <div
       className="relative w-full z-20"
@@ -101,6 +119,7 @@ export function MarkerControlStrip({
             onExport={onExportSection}
             isExporting={exportingSectionId === section.id}
             onToggleEnabled={onToggleSectionEnabled}
+            keyboardIndex={keyboardIndexMap.get(section.id)}
           />
         );
       })}

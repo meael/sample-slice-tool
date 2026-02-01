@@ -23,6 +23,8 @@ export interface SectionHeaderProps {
   isExporting?: boolean;
   /** Callback when user toggles section enabled state */
   onToggleEnabled?: (sectionId: string) => void;
+  /** Keyboard index (1-9) for this section, undefined if no keyboard shortcut */
+  keyboardIndex?: number;
 }
 
 interface EditableNameProps {
@@ -317,6 +319,25 @@ function EnableToggle({ enabled, sectionId, onToggleEnabled }: EnableToggleProps
   );
 }
 
+interface KeyboardBadgeProps {
+  index: number;
+}
+
+/**
+ * Badge showing the keyboard shortcut number (1-9) for a section
+ * Styled consistently with other section header controls
+ */
+function KeyboardBadge({ index }: KeyboardBadgeProps) {
+  return (
+    <div
+      className="flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-cyan-400 text-xs font-medium select-none"
+      title={`Press ${index} to play`}
+    >
+      {index}
+    </div>
+  );
+}
+
 /**
  * Section header component that displays section name and export button
  * Positioned horizontally centered between section start and end markers
@@ -331,6 +352,7 @@ export function SectionHeader({
   onExport,
   isExporting,
   onToggleEnabled,
+  keyboardIndex,
 }: SectionHeaderProps) {
   // Track whether the name is truncated (for future popover feature)
   const [isTruncated, setIsTruncated] = useState(false);
@@ -359,7 +381,8 @@ export function SectionHeader({
   const sectionWidth = endX - startX;
   const exportButtonSpace = onExport ? BUTTON_WIDTH + GAP_WIDTH : 0;
   const toggleButtonSpace = onToggleEnabled ? BUTTON_WIDTH + GAP_WIDTH : 0;
-  const availableNameWidth = sectionWidth - exportButtonSpace - toggleButtonSpace - PADDING * 2;
+  const keyboardBadgeSpace = keyboardIndex !== undefined ? BUTTON_WIDTH + GAP_WIDTH : 0;
+  const availableNameWidth = sectionWidth - exportButtonSpace - toggleButtonSpace - keyboardBadgeSpace - PADDING * 2;
 
   // Determine if we should show the name based on available space
   const showName = availableNameWidth >= MIN_NAME_WIDTH;
@@ -384,6 +407,10 @@ export function SectionHeader({
         transform: 'translate(-50%, -50%)',
       }}
     >
+      {/* Keyboard index badge - only show for enabled sections with keyboard shortcut */}
+      {keyboardIndex !== undefined && (
+        <KeyboardBadge index={keyboardIndex} />
+      )}
       {/* Section name - only show if enough space */}
       {showName && (
         onUpdateName ? (
