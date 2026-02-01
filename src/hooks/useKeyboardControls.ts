@@ -11,6 +11,11 @@ export interface UseKeyboardControlsOptions {
   onStop: () => void;
   /** Callback when a section key (1-9) is pressed on an enabled section */
   onSectionKeyPressed?: (keyboardIndex: number) => void;
+  /** Undo/redo callbacks */
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 /**
@@ -40,6 +45,10 @@ export function useKeyboardControls({
   onResume,
   onStop,
   onSectionKeyPressed,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
 }: UseKeyboardControlsOptions): void {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -71,6 +80,28 @@ export function useKeyboardControls({
         return;
       }
 
+      // Undo/Redo: Cmd/Ctrl+Z and Cmd/Ctrl+Shift+Z
+      // Disabled during audio playback
+      if ((event.metaKey || event.ctrlKey) && key.toLowerCase() === 'z') {
+        // Skip during playback
+        if (playbackState === 'playing') return;
+
+        event.preventDefault();
+
+        if (event.shiftKey) {
+          // Redo: Cmd/Ctrl+Shift+Z
+          if (canRedo && onRedo) {
+            onRedo();
+          }
+        } else {
+          // Undo: Cmd/Ctrl+Z
+          if (canUndo && onUndo) {
+            onUndo();
+          }
+        }
+        return;
+      }
+
       // Check for number keys 1-9
       if (key >= '1' && key <= '9') {
         const keyNumber = parseInt(key, 10); // 1-9
@@ -98,7 +129,7 @@ export function useKeyboardControls({
         onPlaySegment(section.startTime, section.endTime);
       }
     },
-    [sections, playbackState, onPlaySegment, onPause, onResume, onStop, onSectionKeyPressed]
+    [sections, playbackState, onPlaySegment, onPause, onResume, onStop, onSectionKeyPressed, canUndo, canRedo, onUndo, onRedo]
   );
 
   useEffect(() => {

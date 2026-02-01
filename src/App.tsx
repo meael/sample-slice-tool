@@ -35,7 +35,7 @@ function App() {
   });
 
   // Marker state management
-  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, updateMarkerEnabled, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
+  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, updateMarkerEnabled, deleteMarker, setSelectedMarkerId, clearMarkers, canUndo, canRedo, undo, redo } = useMarkers();
 
   // Calculate sections from markers
   const sections = useMemo(() => getSections(markers, audioDuration), [markers, audioDuration]);
@@ -52,7 +52,7 @@ function App() {
     }, 250);
   }, []);
 
-  // Keyboard controls for playback (1-9 keys, spacebar pause/resume, Escape stop)
+  // Keyboard controls for playback (1-9 keys, spacebar pause/resume, Escape stop, Cmd/Ctrl+Z undo/redo)
   useKeyboardControls({
     sections,
     playbackState,
@@ -61,6 +61,10 @@ function App() {
     onResume: resume,
     onStop: stop,
     onSectionKeyPressed: handleSectionKeyPressed,
+    canUndo,
+    canRedo,
+    onUndo: undo,
+    onRedo: redo,
   });
 
   // Export progress state
