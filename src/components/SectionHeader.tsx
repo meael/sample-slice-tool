@@ -28,15 +28,20 @@ interface EditableNameProps {
   sectionId: string;
   sectionIndex: number;
   onUpdateName: (sectionId: string, name: string) => void;
+  /** Maximum width available for the name in pixels */
+  maxWidth: number;
+  /** Callback to report whether the name is truncated */
+  onTruncatedChange?: (isTruncated: boolean) => void;
 }
 
 /**
  * Inline editable section name component
  */
-function EditableName({ name, sectionId, sectionIndex, onUpdateName }: EditableNameProps) {
+function EditableName({ name, sectionId, sectionIndex, onUpdateName, maxWidth, onTruncatedChange }: EditableNameProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(name);
   const inputRef = useRef<HTMLInputElement>(null);
+  const textRef = useRef<HTMLDivElement>(null);
 
   // Focus and select text when entering edit mode
   useEffect(() => {
@@ -45,6 +50,14 @@ function EditableName({ name, sectionId, sectionIndex, onUpdateName }: EditableN
       inputRef.current.select();
     }
   }, [isEditing]);
+
+  // Detect truncation by comparing scrollWidth with clientWidth
+  useEffect(() => {
+    if (!isEditing && textRef.current && onTruncatedChange) {
+      const isTruncated = textRef.current.scrollWidth > textRef.current.clientWidth;
+      onTruncatedChange(isTruncated);
+    }
+  }, [name, maxWidth, isEditing, onTruncatedChange]);
 
   const handleSave = useCallback(() => {
     const trimmedValue = editValue.trim();
@@ -74,6 +87,9 @@ function EditableName({ name, sectionId, sectionIndex, onUpdateName }: EditableN
     setIsEditing(true);
   }, [name]);
 
+  // Constrain maxWidth to a reasonable input width
+  const inputWidth = Math.min(Math.max(maxWidth, 60), 150);
+
   if (isEditing) {
     return (
       <input
@@ -88,7 +104,7 @@ function EditableName({ name, sectionId, sectionIndex, onUpdateName }: EditableN
         className="bg-neutral-700 text-neutral-100 rounded px-1 outline-none focus:ring-1 focus:ring-cyan-500"
         style={{
           fontSize: 12,
-          width: 80,
+          width: inputWidth,
           height: 18,
         }}
       />
@@ -97,10 +113,11 @@ function EditableName({ name, sectionId, sectionIndex, onUpdateName }: EditableN
 
   return (
     <div
+      ref={textRef}
       className="text-neutral-300 select-none truncate cursor-pointer hover:text-neutral-100"
       style={{
         fontSize: 12,
-        maxWidth: 80,
+        maxWidth: maxWidth,
       }}
       title={name}
       onClick={handleClick}
@@ -201,6 +218,12 @@ function ExportDropdown({ sectionId, onExport, isExporting }: ExportDropdownProp
   );
 }
 
+// Constants for layout calculations
+const EXPORT_BUTTON_WIDTH = 16; // w-4 = 16px
+const GAP_WIDTH = 4; // gap-1 = 4px
+const PADDING = 8; // safety margin on each side
+const MIN_NAME_WIDTH = 40; // minimum width to show name
+
 /**
  * Section header component that displays section name and export button
  * Positioned horizontally centered between section start and end markers
@@ -215,6 +238,9 @@ export function SectionHeader({
   onExport,
   isExporting,
 }: SectionHeaderProps) {
+  // Track whether the name is truncated (for future popover feature)
+  const [isTruncated, setIsTruncated] = useState(false);
+
   /**
    * Calculate the pixel X position for a time value
    */
@@ -234,6 +260,26 @@ export function SectionHeader({
   const endX = getPixelX(section.endTime);
   const centerX = (startX + endX) / 2;
 
+  // Calculate available width for the name
+  // Available space = distance between markers - export button - gap - padding
+  const sectionWidth = endX - startX;
+  const exportButtonSpace = onExport ? EXPORT_BUTTON_WIDTH + GAP_WIDTH : 0;
+  const availableNameWidth = sectionWidth - exportButtonSpace - PADDING * 2;
+
+  // Determine if we should show the name based on available space
+  const showName = availableNameWidth >= MIN_NAME_WIDTH;
+
+  // Constrain name width to available space (with reasonable bounds)
+  const nameMaxWidth = Math.max(MIN_NAME_WIDTH, Math.min(availableNameWidth, 200));
+
+  // Callback to track truncation state
+  const handleTruncatedChange = useCallback((truncated: boolean) => {
+    setIsTruncated(truncated);
+  }, []);
+
+  // Log truncation state for debugging (will be used by US-009 for popover)
+  void isTruncated;
+
   return (
     <div
       className="absolute flex items-center gap-1"
@@ -243,25 +289,29 @@ export function SectionHeader({
         transform: 'translate(-50%, -50%)',
       }}
     >
-      {/* Section name */}
-      {onUpdateName ? (
-        <EditableName
-          name={section.name}
-          sectionId={section.id}
-          sectionIndex={sectionIndex}
-          onUpdateName={onUpdateName}
-        />
-      ) : (
-        <div
-          className="text-neutral-300 select-none truncate"
-          style={{
-            fontSize: 12,
-            maxWidth: 80,
-          }}
-          title={section.name}
-        >
-          {section.name}
-        </div>
+      {/* Section name - only show if enough space */}
+      {showName && (
+        onUpdateName ? (
+          <EditableName
+            name={section.name}
+            sectionId={section.id}
+            sectionIndex={sectionIndex}
+            onUpdateName={onUpdateName}
+            maxWidth={nameMaxWidth}
+            onTruncatedChange={handleTruncatedChange}
+          />
+        ) : (
+          <div
+            className="text-neutral-300 select-none truncate"
+            style={{
+              fontSize: 12,
+              maxWidth: nameMaxWidth,
+            }}
+            title={section.name}
+          >
+            {section.name}
+          </div>
+        )
       )}
       {/* Export button */}
       {onExport && (
