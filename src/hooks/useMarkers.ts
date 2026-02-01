@@ -30,6 +30,7 @@ export function useMarkers(): MarkersState & MarkersActions {
     canRedo,
     undo,
     redo,
+    clearHistory,
   } = useUndoRedo<Marker[]>([]);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 
@@ -92,6 +93,12 @@ export function useMarkers(): MarkersState & MarkersActions {
     setSelectedMarkerId(null);
   }, [setMarkers]);
 
+  const reset = useCallback((): void => {
+    setMarkers([]);
+    setSelectedMarkerId(null);
+    clearHistory();
+  }, [setMarkers, clearHistory]);
+
   return {
     markers,
     selectedMarkerId,
@@ -107,5 +114,6 @@ export function useMarkers(): MarkersState & MarkersActions {
     clearMarkers,
     undo,
     redo,
+    reset,
   };
 }

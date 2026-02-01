@@ -50,4 +50,6 @@ export interface MarkersActions {
   undo: () => void;
   /** Redo the last undone operation */
   redo: () => void;
+  /** Reset all markers and clear undo/redo history */
+  reset: () => void;
 }
