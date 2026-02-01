@@ -1,6 +1,7 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { DropZone } from './components/DropZone';
 import { WaveformCanvas } from './components/WaveformCanvas';
+import { MarkerControlStrip } from './components/MarkerControlStrip';
 import { FileLoaderButton } from './components/FileLoaderButton';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
@@ -24,6 +25,23 @@ function App() {
 
   // Marker state management
   const { markers, selectedMarkerId, addMarker, updateMarker, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
+
+  // Waveform container ref and width for MarkerControlStrip
+  const waveformContainerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(0);
+
+  // Update container width on mount and resize
+  useEffect(() => {
+    const updateWidth = () => {
+      if (waveformContainerRef.current) {
+        setContainerWidth(waveformContainerRef.current.getBoundingClientRect().width);
+      }
+    };
+
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, [waveformData]);
 
   const handleFileLoaded = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -94,20 +112,31 @@ function App() {
 
       {/* Waveform area */}
       <div className="flex-1 flex items-center justify-center">
-        <WaveformCanvas
-          peaks={waveformData}
-          height={200}
-          visibleRange={visibleRange}
-          onZoomAtPoint={zoomAtPoint}
-          onPan={setPan}
-          panOffset={panOffset}
-          onAddMarker={addMarker}
-          markers={markers}
-          selectedMarkerId={selectedMarkerId}
-          onSelectMarker={setSelectedMarkerId}
-          onUpdateMarker={updateMarker}
-          onDeleteMarker={deleteMarker}
-        />
+        <div ref={waveformContainerRef} className="w-full flex flex-col">
+          {/* Marker control strip */}
+          <MarkerControlStrip
+            markers={markers}
+            containerWidth={containerWidth}
+            visibleRange={visibleRange}
+            duration={audioDuration}
+            onDeleteMarker={deleteMarker}
+          />
+          {/* Waveform canvas */}
+          <WaveformCanvas
+            peaks={waveformData}
+            height={200}
+            visibleRange={visibleRange}
+            onZoomAtPoint={zoomAtPoint}
+            onPan={setPan}
+            panOffset={panOffset}
+            onAddMarker={addMarker}
+            markers={markers}
+            selectedMarkerId={selectedMarkerId}
+            onSelectMarker={setSelectedMarkerId}
+            onUpdateMarker={updateMarker}
+            onDeleteMarker={deleteMarker}
+          />
+        </div>
       </div>
 
       {/* Error display */}
