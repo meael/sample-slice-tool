@@ -672,7 +672,7 @@ export function WaveformCanvas({
           return (
             <div
               key={`close-${marker.id}`}
-              className="absolute flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer"
+              className="absolute flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer hover:bg-neutral-600 hover:text-white transition-colors"
               style={{
                 left: pixelX,
                 top: 4,

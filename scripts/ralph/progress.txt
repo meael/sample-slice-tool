@@ -22,3 +22,27 @@ Started: Sun Feb  1 12:05:53 EET 2026
 - No additional code changes needed
 - Files changed: `scripts/ralph/prd.json`
 ---
+
+## 2026-02-01 - US-006
+- Added click handler to close icon that calls onDeleteMarker with marker.id
+- Added onMouseDown handler with stopPropagation to prevent marker selection/drag
+- onClick handler also calls stopPropagation to prevent waveform click behavior
+- Added cursor-pointer class for visual feedback that icon is clickable
+- Files changed: `src/components/WaveformCanvas.tsx`, `scripts/ralph/prd.json`
+- **Learnings for future iterations:**
+  - Use both onClick and onMouseDown with stopPropagation to prevent parent element handlers
+  - onMouseDown prevents drag initiation, onClick prevents click-to-add-marker behavior
+  - The existing onDeleteMarker prop was already wired up - just needed to add handlers
+---
+
+## 2026-02-01 - US-007
+- Added hover feedback to close icon using Tailwind hover utilities
+- Added `hover:bg-neutral-600 hover:text-white` for brighter appearance on hover
+- Added `transition-colors` for smooth color transition effect
+- Cursor pointer was already in place from US-006
+- Files changed: `src/components/WaveformCanvas.tsx`, `scripts/ralph/prd.json`
+- **Learnings for future iterations:**
+  - Tailwind hover utilities (hover:bg-*, hover:text-*) work well for interactive feedback
+  - `transition-colors` provides smooth hover transitions without additional CSS
+  - Simple hover effects can be achieved entirely with Tailwind classes
+---
