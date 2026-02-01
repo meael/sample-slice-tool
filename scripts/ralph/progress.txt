@@ -45,3 +45,14 @@ Started: Sun Feb  1 17:55:14 EET 2026
   - Use `position: absolute` with `right: 100%` to position elements to the left of a centered element
   - The keyboard badge only appears for markers that start an enabled section (determined by `markerKeyboardIndexMap`)
 ---
+
+## 2026-02-01 - US-002 (Fix)
+- Fixed US-002 implementation: replaced visible ◀▶ arrows with CSS cursor style
+- Now uses `cursor: ew-resize` on marker hover for cleaner drag affordance
+- Removed the arrow elements entirely - cursor style is the standard UX pattern
+- Files changed:
+  - `src/components/MarkerControlStrip.tsx`
+- **Learnings for future iterations:**
+  - CSS cursor styles (`ew-resize`, `grab`, `grabbing`) are preferred over visible drag indicators
+  - The `hoveredMarkerId` state in MarkerControlStrip.tsx tracks which marker is hovered
+---

@@ -430,7 +430,16 @@ export function WaveformCanvas({
       const nearbyMarkerId = findMarkerAtPixel(event.clientX);
       if (nearbyMarkerId) {
         setHoverTime(null);
+        // Show ew-resize cursor to indicate marker can be dragged
+        if (containerRef.current) {
+          containerRef.current.style.cursor = 'ew-resize';
+        }
         return;
+      }
+
+      // Restore default cursor when not hovering a marker
+      if (containerRef.current) {
+        containerRef.current.style.cursor = onPan ? 'grab' : 'default';
       }
 
       const time = pixelToTime(event.clientX);
@@ -438,7 +447,7 @@ export function WaveformCanvas({
       const clampedTime = Math.max(0, Math.min(time, peaks.duration));
       setHoverTime(clampedTime);
     },
-    [pixelToTime, peaks.duration, findMarkerAtPixel]
+    [pixelToTime, peaks.duration, findMarkerAtPixel, onPan]
   );
 
   /**
@@ -446,7 +455,11 @@ export function WaveformCanvas({
    */
   const handleContainerMouseLeave = useCallback(() => {
     setHoverTime(null);
-  }, []);
+    // Restore default cursor when leaving container
+    if (containerRef.current) {
+      containerRef.current.style.cursor = onPan ? 'grab' : 'default';
+    }
+  }, [onPan]);
 
   /**
    * Handle mouse down for drag-to-pan, marker drag, or click-to-add-marker

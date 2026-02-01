@@ -22,20 +22,19 @@
     },
     {
       "id": "US-002",
-      "title": "Show drag arrows on marker hover",
-      "description": "As a user, I want to see drag arrows when I hover over a marker so I know I can drag it.",
+      "title": "Show drag cursor on marker hover",
+      "description": "As a user, I want to see an ew-resize cursor when I hover over a marker so I know I can drag it.",
       "acceptanceCriteria": [
-        "Drag arrows (<> or ↔) appear instantly on marker hover",
-        "No click required to reveal drag affordances",
-        "Arrows positioned to indicate horizontal drag direction",
-        "Arrows disappear when hover ends",
-        "Arrows styled subtly but visibly (match existing UI theme)",
+        "Cursor changes to ew-resize on marker hover",
+        "No click required to reveal drag affordance",
+        "Cursor returns to default when hover ends",
+        "Behavior is consistent across all markers",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 2,
       "passes": true,
-      "notes": ""
+      "notes": "Fixed to use CSS cursor style instead of visible arrows"
     },
     {
       "id": "US-003",
@@ -72,20 +71,50 @@
       "notes": ""
     },
     {
-      "id": "US-005",
-      "title": "Implement undo/redo state management",
-      "description": "As a developer, I need an undo/redo system to track marker and section changes.",
+      "id": "US-005a",
+      "title": "Create generic useUndoRedo hook",
+      "description": "As a developer, I need a generic hook that wraps state with undo/redo capability.",
       "acceptanceCriteria": [
-        "Create useUndoRedo hook or integrate undo/redo into useMarkers",
-        "Track state snapshots for: marker movement, creation, deletion",
-        "Track state snapshots for: section enable/disable, section rename",
-        "Support multiple undo/redo steps (linear history stack)",
-        "Expose canUndo, canRedo boolean flags",
-        "Expose undo(), redo(), reset() functions",
-        "History is cleared on reset()",
+        "Create src/hooks/useUndoRedo.ts with generic useUndoRedo<T> hook",
+        "Hook accepts initial state and returns: state, setState, canUndo, canRedo, undo, redo",
+        "setState pushes current state to history before updating",
+        "undo() moves back one step in history (if canUndo)",
+        "redo() moves forward one step in history (if canRedo)",
+        "History is a linear stack with configurable max size (default 50)",
         "Typecheck passes"
       ],
       "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005b",
+      "title": "Integrate undo/redo into useMarkers",
+      "description": "As a developer, I need useMarkers to use the undo/redo system for all marker operations.",
+      "acceptanceCriteria": [
+        "Replace useState for markers with useUndoRedo in useMarkers.ts",
+        "All marker operations (add, update, delete, updateName, updateEnabled) create history entries",
+        "Expose canUndo, canRedo, undo, redo from useMarkers hook",
+        "Update MarkersState and MarkersActions types to include undo/redo",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005c",
+      "title": "Add reset functionality to useMarkers",
+      "description": "As a developer, I need a reset function that clears markers and undo history.",
+      "acceptanceCriteria": [
+        "Add clearHistory() function to useUndoRedo hook",
+        "Add reset() function to useMarkers that clears markers and history",
+        "reset() sets markers to empty array",
+        "reset() clears the undo/redo history (cannot undo a reset)",
+        "Expose reset from useMarkers hook",
+        "Typecheck passes"
+      ],
+      "priority": 7,
       "passes": false,
       "notes": ""
     },
@@ -102,7 +131,7 @@
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
-      "priority": 6,
+      "priority": 8,
       "passes": false,
       "notes": ""
     },
@@ -121,7 +150,7 @@
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
-      "priority": 7,
+      "priority": 9,
       "passes": false,
       "notes": ""
     },
@@ -139,7 +168,7 @@
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
-      "priority": 8,
+      "priority": 10,
       "passes": false,
       "notes": ""
     }
