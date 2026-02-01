@@ -6,6 +6,8 @@ export interface Marker {
   id: string;
   /** Time position in seconds */
   time: number;
+  /** Display name for the section */
+  name: string;
 }
 
 /**
@@ -26,6 +28,8 @@ export interface MarkersActions {
   addMarker: (time: number) => Marker;
   /** Update an existing marker's time */
   updateMarker: (id: string, time: number) => void;
+  /** Update an existing marker's name */
+  updateMarkerName: (id: string, name: string) => void;
   /** Delete a marker by ID */
   deleteMarker: (id: string) => void;
   /** Get all markers */

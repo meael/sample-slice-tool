@@ -26,15 +26,22 @@ export function useMarkers(): MarkersState & MarkersActions {
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 
   const addMarker = useCallback((time: number): Marker => {
-    const newMarker: Marker = {
-      id: generateMarkerId(),
-      time,
-    };
+    let newMarker: Marker;
 
-    setMarkers((prev) => sortMarkersByTime([...prev, newMarker]));
-    setSelectedMarkerId(newMarker.id);
+    setMarkers((prev) => {
+      const sectionNumber = prev.length + 1;
+      newMarker = {
+        id: generateMarkerId(),
+        time,
+        name: `Section ${sectionNumber}`,
+      };
+      return sortMarkersByTime([...prev, newMarker]);
+    });
 
-    return newMarker;
+    // TypeScript needs this assertion since newMarker is set inside the callback
+    setSelectedMarkerId(newMarker!.id);
+
+    return newMarker!;
   }, []);
 
   const updateMarker = useCallback((id: string, time: number): void => {
@@ -44,6 +51,14 @@ export function useMarkers(): MarkersState & MarkersActions {
       );
       return sortMarkersByTime(updated);
     });
+  }, []);
+
+  const updateMarkerName = useCallback((id: string, name: string): void => {
+    setMarkers((prev) =>
+      prev.map((marker) =>
+        marker.id === id ? { ...marker, name } : marker
+      )
+    );
   }, []);
 
   const deleteMarker = useCallback((id: string): void => {
@@ -65,6 +80,7 @@ export function useMarkers(): MarkersState & MarkersActions {
     selectedMarkerId,
     addMarker,
     updateMarker,
+    updateMarkerName,
     deleteMarker,
     getMarkers,
     setSelectedMarkerId,
