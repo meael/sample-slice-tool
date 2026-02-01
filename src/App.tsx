@@ -30,7 +30,7 @@ function App() {
   const { markers, selectedMarkerId, addMarker, updateMarker, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
 
   // Audio playback
-  const { playSegment, stop, pause, resume, state: playbackState } = usePlayback({ audioBuffer });
+  const { playSegment, stop, pause, resume, state: playbackState, currentTime: playbackCurrentTime, segmentStart, segmentEnd } = usePlayback({ audioBuffer });
 
   // Keyboard controls for playback (1-9 keys, spacebar pause/resume, Escape stop)
   useKeyboardControls({
@@ -155,6 +155,10 @@ function App() {
             onSelectMarker={setSelectedMarkerId}
             onUpdateMarker={updateMarker}
             onDeleteMarker={deleteMarker}
+            playbackState={playbackState}
+            playbackCurrentTime={playbackCurrentTime}
+            playbackSegmentStart={segmentStart}
+            playbackSegmentEnd={segmentEnd}
           />
         </div>
       </div>

@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import type { WaveformPeaks } from '../types/waveform';
 import type { VisibleRange } from '../types/zoom';
 import type { Marker } from '../types/marker';
+import type { PlaybackState } from '../hooks/usePlayback';
 import { ContextMenu } from './ContextMenu';
 
 /** Hit detection threshold in pixels for selecting markers */
@@ -40,6 +41,14 @@ export interface WaveformCanvasProps {
   onUpdateMarker?: (markerId: string, time: number) => void;
   /** Callback when user deletes the selected marker */
   onDeleteMarker?: (markerId: string) => void;
+  /** Current playback state */
+  playbackState?: PlaybackState;
+  /** Current playback position in seconds */
+  playbackCurrentTime?: number;
+  /** Start time of the current playback segment */
+  playbackSegmentStart?: number;
+  /** End time of the current playback segment */
+  playbackSegmentEnd?: number;
 }
 
 /**
@@ -63,6 +72,10 @@ export function WaveformCanvas({
   onSelectMarker,
   onUpdateMarker,
   onDeleteMarker,
+  playbackState = 'idle',
+  playbackCurrentTime = 0,
+  playbackSegmentStart = 0,
+  playbackSegmentEnd = 0,
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -191,10 +204,34 @@ export function WaveformCanvas({
     ctx.lineTo(width, centerY);
     ctx.stroke();
 
-    // Draw markers
+    // Calculate visible range for markers and playback progress
     const rangeStart = visibleRange?.start ?? 0;
     const rangeEnd = visibleRange?.end ?? duration;
     const rangeDuration = rangeEnd - rangeStart;
+
+    // Draw playback progress fill
+    if ((playbackState === 'playing' || playbackState === 'paused') && playbackSegmentEnd > playbackSegmentStart) {
+      // Calculate the fill region (from segment start to current playback position)
+      const fillStart = Math.max(playbackSegmentStart, rangeStart);
+      const fillEnd = Math.min(playbackCurrentTime, rangeEnd);
+
+      // Only draw if there's a visible portion to fill
+      if (fillEnd > fillStart && fillStart < rangeEnd && fillEnd > rangeStart) {
+        const startFraction = (fillStart - rangeStart) / rangeDuration;
+        const endFraction = (fillEnd - rangeStart) / rangeDuration;
+        const startX = Math.round(startFraction * width);
+        const endX = Math.round(endFraction * width);
+        const fillWidth = endX - startX;
+
+        if (fillWidth > 0) {
+          // Draw semi-transparent cyan fill overlay
+          ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+          ctx.fillRect(startX, 0, fillWidth, canvasHeight);
+        }
+      }
+    }
+
+    // Draw markers
 
     for (const marker of markers) {
       // Check if marker is within visible range
@@ -230,7 +267,7 @@ export function WaveformCanvas({
       ctx.lineTo(x, canvasHeight);
       ctx.stroke();
     }
-  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor, hoverTime]);
+  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor, hoverTime, playbackState, playbackCurrentTime, playbackSegmentStart, playbackSegmentEnd]);
 
   // Draw on mount and when dependencies change
   useEffect(() => {

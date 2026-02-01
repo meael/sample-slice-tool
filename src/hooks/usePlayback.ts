@@ -11,6 +11,10 @@ export interface UsePlaybackReturn {
   state: PlaybackState;
   /** Current playback position in seconds */
   currentTime: number;
+  /** Start time of the current segment being played */
+  segmentStart: number;
+  /** End time of the current segment being played */
+  segmentEnd: number;
   /** Play a segment from startTime to endTime */
   playSegment: (startTime: number, endTime: number) => void;
   /** Stop playback and reset to idle */
@@ -30,6 +34,8 @@ export interface UsePlaybackReturn {
 export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackReturn {
   const [state, setState] = useState<PlaybackState>('idle');
   const [currentTime, setCurrentTime] = useState(0);
+  const [segmentStart, setSegmentStart] = useState(0);
+  const [segmentEnd, setSegmentEnd] = useState(0);
 
   // Refs for Web Audio API nodes and state tracking
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -251,6 +257,8 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
 
       setState('playing');
       setCurrentTime(startTime);
+      setSegmentStart(startTime);
+      setSegmentEnd(endTime);
       startTimeUpdate();
     },
     [audioBuffer, getAudioContext, cleanupSourceNode, cancelTimeUpdate, startTimeUpdate, stopInternal, fadeOutCurrentPlayback]
@@ -263,6 +271,8 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
     stopInternal();
     setState('idle');
     setCurrentTime(0);
+    setSegmentStart(0);
+    setSegmentEnd(0);
   }, [stopInternal]);
 
   /**
@@ -359,6 +369,8 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
   return {
     state,
     currentTime,
+    segmentStart,
+    segmentEnd,
     playSegment,
     stop,
     pause,
