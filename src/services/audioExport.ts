@@ -1,6 +1,7 @@
 // Audio export utilities
 // Dependencies: lamejs for MP3 encoding, jszip for ZIP archives, file-saver for downloads
 
+import { Mp3Encoder } from 'lamejs';
 import type { Mp3Encoder as Mp3EncoderType } from 'lamejs';
 import type JSZipType from 'jszip';
 import type { saveAs as saveAsType } from 'file-saver';
@@ -54,6 +55,87 @@ export function encodeWav(
   const wavBuffer = createWavBuffer(pcmData, sampleRate, numChannels);
 
   return new Blob([wavBuffer], { type: 'audio/wav' });
+}
+
+/**
+ * Encodes a segment of an AudioBuffer as an MP3 file.
+ * @param audioBuffer The source AudioBuffer
+ * @param startTime Start time in seconds
+ * @param endTime End time in seconds
+ * @returns Blob containing MP3 audio data
+ */
+export function encodeMp3(
+  audioBuffer: AudioBuffer,
+  startTime: number,
+  endTime: number
+): Blob {
+  const sampleRate = audioBuffer.sampleRate;
+  const numChannels = audioBuffer.numberOfChannels;
+  const kbps = 192; // MP3 bitrate
+
+  // Calculate sample indices for the segment
+  const startSample = Math.floor(startTime * sampleRate);
+  const endSample = Math.floor(endTime * sampleRate);
+  const numSamples = endSample - startSample;
+
+  // Extract channel data and convert to 16-bit PCM
+  const leftChannel = new Int16Array(numSamples);
+  const rightChannel = numChannels > 1 ? new Int16Array(numSamples) : leftChannel;
+
+  const leftData = audioBuffer.getChannelData(0);
+  const rightData = numChannels > 1 ? audioBuffer.getChannelData(1) : leftData;
+
+  for (let i = 0; i < numSamples; i++) {
+    const sampleIndex = startSample + i;
+
+    // Left channel
+    const leftSample = sampleIndex < leftData.length ? leftData[sampleIndex] : 0;
+    const leftClamped = Math.max(-1, Math.min(1, leftSample));
+    leftChannel[i] = leftClamped < 0 ? leftClamped * 0x8000 : leftClamped * 0x7fff;
+
+    // Right channel (same as left for mono)
+    if (numChannels > 1) {
+      const rightSample = sampleIndex < rightData.length ? rightData[sampleIndex] : 0;
+      const rightClamped = Math.max(-1, Math.min(1, rightSample));
+      rightChannel[i] = rightClamped < 0 ? rightClamped * 0x8000 : rightClamped * 0x7fff;
+    }
+  }
+
+  // Create MP3 encoder
+  const encoder = new Mp3Encoder(numChannels, sampleRate, kbps);
+  const mp3Chunks: BlobPart[] = [];
+
+  // Encode in chunks for better performance
+  const chunkSize = 1152; // MP3 frame size
+  for (let i = 0; i < numSamples; i += chunkSize) {
+    const leftChunk = leftChannel.subarray(i, i + chunkSize);
+    const rightChunk = numChannels > 1 ? rightChannel.subarray(i, i + chunkSize) : undefined;
+
+    const mp3Data = encoder.encodeBuffer(leftChunk, rightChunk);
+    if (mp3Data.length > 0) {
+      // Copy to new ArrayBuffer for Blob compatibility
+      const buffer = new ArrayBuffer(mp3Data.length);
+      const view = new Uint8Array(buffer);
+      for (let j = 0; j < mp3Data.length; j++) {
+        view[j] = mp3Data[j] & 0xff;
+      }
+      mp3Chunks.push(buffer);
+    }
+  }
+
+  // Flush remaining data
+  const flushData = encoder.flush();
+  if (flushData.length > 0) {
+    const buffer = new ArrayBuffer(flushData.length);
+    const view = new Uint8Array(buffer);
+    for (let j = 0; j < flushData.length; j++) {
+      view[j] = flushData[j] & 0xff;
+    }
+    mp3Chunks.push(buffer);
+  }
+
+  // Combine all chunks into a single Blob
+  return new Blob(mp3Chunks, { type: 'audio/mpeg' });
 }
 
 /**
