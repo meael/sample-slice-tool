@@ -27,7 +27,7 @@ function App() {
   });
 
   // Marker state management
-  const { markers, selectedMarkerId, addMarker, updateMarker, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
+  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
 
   // Audio playback
   const { playSegment, stop, pause, resume, state: playbackState, currentTime: playbackCurrentTime, segmentStart, segmentEnd } = usePlayback({ audioBuffer });
@@ -140,6 +140,7 @@ function App() {
             visibleRange={visibleRange}
             duration={audioDuration}
             onDeleteMarker={deleteMarker}
+            onUpdateMarkerName={updateMarkerName}
             playbackState={playbackState}
             playbackSegmentStart={segmentStart}
             playbackSegmentEnd={segmentEnd}

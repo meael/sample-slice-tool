@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Marker } from '../types/marker';
 import type { VisibleRange } from '../types/zoom';
 import type { PlaybackState } from '../hooks/usePlayback';
@@ -13,12 +14,109 @@ export interface MarkerControlStripProps {
   duration: number;
   /** Callback when user clicks to delete a marker */
   onDeleteMarker?: (markerId: string) => void;
+  /** Callback when user updates a marker's name */
+  onUpdateMarkerName?: (markerId: string, name: string) => void;
   /** Current playback state */
   playbackState?: PlaybackState;
   /** Start time of the currently playing segment */
   playbackSegmentStart?: number;
   /** End time of the currently playing segment */
   playbackSegmentEnd?: number;
+}
+
+interface EditableNameProps {
+  name: string;
+  markerId: string;
+  markerIndex: number;
+  onUpdateName: (markerId: string, name: string) => void;
+}
+
+/**
+ * Inline editable section name component
+ */
+function EditableName({ name, markerId, markerIndex, onUpdateName }: EditableNameProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Focus and select text when entering edit mode
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.focus();
+      inputRef.current.select();
+    }
+  }, [isEditing]);
+
+  // Update editValue when name prop changes (e.g., from external update)
+  useEffect(() => {
+    if (!isEditing) {
+      setEditValue(name);
+    }
+  }, [name, isEditing]);
+
+  const handleSave = useCallback(() => {
+    const trimmedValue = editValue.trim();
+    const finalName = trimmedValue || `Section ${markerIndex + 1}`;
+    onUpdateName(markerId, finalName);
+    setEditValue(finalName);
+    setIsEditing(false);
+  }, [editValue, markerId, markerIndex, onUpdateName]);
+
+  const handleCancel = useCallback(() => {
+    setEditValue(name);
+    setIsEditing(false);
+  }, [name]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSave();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      handleCancel();
+    }
+  }, [handleSave, handleCancel]);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsEditing(true);
+  }, []);
+
+  if (isEditing) {
+    return (
+      <input
+        ref={inputRef}
+        type="text"
+        value={editValue}
+        onChange={(e) => setEditValue(e.target.value)}
+        onKeyDown={handleKeyDown}
+        onBlur={handleSave}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        className="bg-neutral-700 text-neutral-100 rounded px-1 outline-none focus:ring-1 focus:ring-cyan-500"
+        style={{
+          fontSize: 12,
+          width: 80,
+          height: 18,
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      className="text-neutral-300 select-none truncate cursor-pointer hover:text-neutral-100"
+      style={{
+        fontSize: 12,
+        maxWidth: 80,
+      }}
+      title={name}
+      onClick={handleClick}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {name}
+    </div>
+  );
 }
 
 /**
@@ -31,6 +129,7 @@ export function MarkerControlStrip({
   visibleRange,
   duration,
   onDeleteMarker,
+  onUpdateMarkerName,
   playbackState,
   playbackSegmentStart,
   playbackSegmentEnd,
@@ -105,16 +204,25 @@ export function MarkerControlStrip({
             }}
           >
             {/* Section name */}
-            <div
-              className="text-neutral-300 select-none truncate"
-              style={{
-                fontSize: 12,
-                maxWidth: 80,
-              }}
-              title={marker.name}
-            >
-              {marker.name}
-            </div>
+            {onUpdateMarkerName ? (
+              <EditableName
+                name={marker.name}
+                markerId={marker.id}
+                markerIndex={index}
+                onUpdateName={onUpdateMarkerName}
+              />
+            ) : (
+              <div
+                className="text-neutral-300 select-none truncate"
+                style={{
+                  fontSize: 12,
+                  maxWidth: 80,
+                }}
+                title={marker.name}
+              >
+                {marker.name}
+              </div>
+            )}
             {/* Number badge */}
             {badgeNumber !== null && (
               <div
