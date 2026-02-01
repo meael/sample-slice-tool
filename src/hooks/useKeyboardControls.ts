@@ -23,8 +23,9 @@ function isInputElement(target: EventTarget | null): boolean {
 /**
  * Hook for handling keyboard controls for audio playback
  *
- * - Keys 1-9 play the corresponding section
- * - Key N plays section N (sections[N-1])
+ * - Keys 1-9 play the corresponding enabled section
+ * - Key N plays enabled section N (enabledSections[N-1])
+ * - Only enabled sections receive keyboard shortcuts
  * - Spacebar pauses/resumes playback
  * - Escape stops playback and resets to idle
  * - Ignores key events when input/textarea is focused
@@ -72,13 +73,16 @@ export function useKeyboardControls({
         const keyNumber = parseInt(key, 10); // 1-9
         const sectionIndex = keyNumber - 1; // 0-8
 
-        // Check if section exists
-        if (sectionIndex >= sections.length) {
-          // No corresponding section, ignore
+        // Filter to only enabled sections for keyboard mapping
+        const enabledSections = sections.filter(s => s.enabled);
+
+        // Check if enabled section exists at this index
+        if (sectionIndex >= enabledSections.length) {
+          // No corresponding enabled section, ignore
           return;
         }
 
-        const section = sections[sectionIndex];
+        const section = enabledSections[sectionIndex];
 
         // Prevent default behavior for number keys
         event.preventDefault();
