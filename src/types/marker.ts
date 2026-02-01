@@ -34,6 +34,8 @@ export interface MarkersActions {
   addMarker: (time: number) => Marker;
   /** Update an existing marker's time */
   updateMarker: (id: string, time: number) => void;
+  /** Update an existing marker's time without creating undo history (for intermediate drag updates) */
+  updateMarkerSilent: (id: string, time: number) => void;
   /** Update an existing marker's name */
   updateMarkerName: (id: string, name: string) => void;
   /** Update an existing marker's enabled state */

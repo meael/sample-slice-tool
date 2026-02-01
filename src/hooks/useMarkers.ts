@@ -26,6 +26,7 @@ export function useMarkers(): MarkersState & MarkersActions {
   const {
     state: markers,
     setState: setMarkers,
+    setStateWithoutHistory: setMarkersWithoutHistory,
     canUndo,
     canRedo,
     undo,
@@ -62,6 +63,15 @@ export function useMarkers(): MarkersState & MarkersActions {
       return sortMarkersByTime(updated);
     });
   }, [setMarkers]);
+
+  const updateMarkerSilent = useCallback((id: string, time: number): void => {
+    setMarkersWithoutHistory((prev) => {
+      const updated = prev.map((marker) =>
+        marker.id === id ? { ...marker, time } : marker
+      );
+      return sortMarkersByTime(updated);
+    });
+  }, [setMarkersWithoutHistory]);
 
   const updateMarkerName = useCallback((id: string, name: string): void => {
     setMarkers((prev) =>
@@ -106,6 +116,7 @@ export function useMarkers(): MarkersState & MarkersActions {
     canRedo,
     addMarker,
     updateMarker,
+    updateMarkerSilent,
     updateMarkerName,
     updateMarkerEnabled,
     deleteMarker,
