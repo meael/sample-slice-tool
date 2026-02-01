@@ -244,26 +244,36 @@ export function WaveformCanvas({
     ctx.lineTo(width, centerY);
     ctx.stroke();
 
-    // Draw playback progress fill
+    // Draw playback progress fill (only within section boundaries)
     if ((playbackState === 'playing' || playbackState === 'paused') && playbackSegmentEnd > playbackSegmentStart) {
-      // Calculate the fill region (from segment start to current playback position)
-      const fillStart = Math.max(playbackSegmentStart, rangeStart);
-      const fillEnd = Math.min(playbackCurrentTime, rangeEnd);
+      // Only draw fill within active sections
+      // Find which section contains the playback segment
+      const activeSection = sections.find(
+        section => playbackSegmentStart >= section.startTime && playbackSegmentEnd <= section.endTime
+      );
 
-      // Only draw if there's a visible portion to fill
-      if (fillEnd > fillStart && fillStart < rangeEnd && fillEnd > rangeStart) {
-        const startFraction = (fillStart - rangeStart) / rangeDuration;
-        const endFraction = (fillEnd - rangeStart) / rangeDuration;
-        const startX = Math.round(startFraction * width);
-        const endX = Math.round(endFraction * width);
-        const fillWidth = endX - startX;
+      if (activeSection) {
+        // Calculate the fill region, bounded by the active section
+        const fillStart = Math.max(playbackSegmentStart, activeSection.startTime, rangeStart);
+        const fillEnd = Math.min(playbackCurrentTime, activeSection.endTime, rangeEnd);
 
-        if (fillWidth > 0) {
-          // Draw semi-transparent cyan fill overlay
-          ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
-          ctx.fillRect(startX, 0, fillWidth, canvasHeight);
+        // Only draw if there's a visible portion to fill
+        if (fillEnd > fillStart && fillStart < rangeEnd && fillEnd > rangeStart) {
+          const startFraction = (fillStart - rangeStart) / rangeDuration;
+          const endFraction = (fillEnd - rangeStart) / rangeDuration;
+          const startX = Math.round(startFraction * width);
+          const endX = Math.round(endFraction * width);
+          const fillWidth = endX - startX;
+
+          if (fillWidth > 0) {
+            // Draw semi-transparent cyan fill overlay
+            ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+            ctx.fillRect(startX, 0, fillWidth, canvasHeight);
+          }
         }
       }
+      // If no active section contains the playback segment, no fill is drawn
+      // This prevents fill from appearing in inactive (grayscale) areas
     }
 
     // Draw markers
