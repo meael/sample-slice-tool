@@ -10,6 +10,8 @@ export interface MarkerControlStripProps {
   visibleRange?: VisibleRange;
   /** Total audio duration in seconds */
   duration: number;
+  /** Callback when user clicks to delete a marker */
+  onDeleteMarker?: (markerId: string) => void;
 }
 
 /**
@@ -21,6 +23,7 @@ export function MarkerControlStrip({
   containerWidth,
   visibleRange,
   duration,
+  onDeleteMarker,
 }: MarkerControlStripProps) {
   /**
    * Calculate the pixel X position of a marker
@@ -68,7 +71,21 @@ export function MarkerControlStrip({
               transform: 'translate(-50%, -50%)',
             }}
           >
-            {/* Close icon - placeholder for US-002 */}
+            {/* Close icon */}
+            <div
+              className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-colors hover:bg-neutral-600 hover:text-white"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onDeleteMarker) {
+                  onDeleteMarker(marker.id);
+                }
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              ×
+            </div>
           </div>
         );
       })}
