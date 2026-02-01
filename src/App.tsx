@@ -5,6 +5,7 @@ import { MarkerControlStrip, type ExportFormat } from './components/MarkerContro
 import { FileLoaderButton } from './components/FileLoaderButton';
 import { ExportAllButton, type ExportAllFormat } from './components/ExportAllButton';
 import { ExportProgressOverlay } from './components/ExportProgressOverlay';
+import { UndoRedoButtons } from './components/UndoRedoButtons';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
 import { encodeWav, encodeMp3, sanitizeFilename, createZipArchive } from './services/audioExport';
@@ -35,7 +36,7 @@ function App() {
   });
 
   // Marker state management
-  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, updateMarkerEnabled, deleteMarker, setSelectedMarkerId, clearMarkers, canUndo, canRedo, undo, redo } = useMarkers();
+  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, updateMarkerEnabled, deleteMarker, setSelectedMarkerId, clearMarkers, canUndo, canRedo, undo, redo, reset } = useMarkers();
 
   // Calculate sections from markers
   const sections = useMemo(() => getSections(markers, audioDuration), [markers, audioDuration]);
@@ -262,6 +263,16 @@ function App() {
         <FileLoaderButton onFileSelected={handleFileLoaded} />
         {audioBuffer && sections.length > 0 && (
           <ExportAllButton onExportAll={handleExportAll} />
+        )}
+        {audioBuffer && (
+          <UndoRedoButtons
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+            onReset={reset}
+            disabled={playbackState === 'playing'}
+          />
         )}
         {isLoading && (
           <span className="text-neutral-400 text-xs">Loading...</span>
