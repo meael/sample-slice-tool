@@ -132,6 +132,8 @@ export function MarkerControlStrip({
 
   // Track which marker is being hovered (for showing drag affordance)
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
+  // Track which marker control area is being hovered (for showing close icon on enabled sections)
+  const [hoveredControlId, setHoveredControlId] = useState<string | null>(null);
 
   return (
     <div
@@ -169,11 +171,11 @@ export function MarkerControlStrip({
         const section = markerSectionMap.get(marker.id);
         const isEnabledSection = section?.enabled ?? false;
         const isHovered = hoveredMarkerId === marker.id;
+        const isControlHovered = hoveredControlId === marker.id;
 
-        // For enabled sections: show keyboard label by default (close icon hidden)
+        // For enabled sections: show keyboard label by default, close icon on hover
         // For disabled sections: always show close icon (will be implemented in US-003)
-        const showKeyboardLabel = isEnabledSection && keyboardIndex !== undefined;
-        const showCloseIcon = !isEnabledSection || !section;
+        const hasKeyboardLabel = isEnabledSection && keyboardIndex !== undefined;
 
         return (
           <div
@@ -190,24 +192,49 @@ export function MarkerControlStrip({
             onMouseLeave={() => setHoveredMarkerId(null)}
           >
             {/* Top row: keyboard label OR close icon (centered above marker line) */}
-            <div className="relative flex items-center justify-center mt-[5px]">
-              {/* Keyboard label - shown by default for enabled sections */}
-              {showKeyboardLabel && (
+            {/* Control container handles hover for swapping label/close */}
+            <div
+              className="relative flex items-center justify-center mt-[5px]"
+              onMouseEnter={() => setHoveredControlId(marker.id)}
+              onMouseLeave={() => setHoveredControlId(null)}
+            >
+              {/* For enabled sections with keyboard labels: show both elements with opacity transitions */}
+              {hasKeyboardLabel ? (
+                <>
+                  {/* Keyboard label - visible by default, hidden on hover */}
+                  <div
+                    className={`flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-opacity duration-150 ${
+                      pressedKeyboardIndex === keyboardIndex
+                        ? 'bg-cyan-400 text-neutral-900 border-cyan-300 scale-110'
+                        : 'bg-neutral-600 text-neutral-200 border-neutral-500'
+                    }`}
+                    style={{ opacity: isControlHovered ? 0 : 1 }}
+                    title={`Press ${keyboardIndex} to play`}
+                  >
+                    {keyboardIndex}
+                  </div>
+                  {/* Close icon - hidden by default, shown on hover */}
+                  <div
+                    className="absolute flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-all duration-150 hover:bg-red-600 hover:text-white"
+                    style={{ opacity: isControlHovered ? 1 : 0, pointerEvents: isControlHovered ? 'auto' : 'none' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onDeleteMarker) {
+                        onDeleteMarker(marker.id);
+                      }
+                    }}
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                    }}
+                    title="Delete marker"
+                  >
+                    ×
+                  </div>
+                </>
+              ) : (
+                /* For disabled sections or markers not starting a section: always show close icon */
                 <div
-                  className={`flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-all duration-200 ${
-                    pressedKeyboardIndex === keyboardIndex
-                      ? 'bg-cyan-400 text-neutral-900 border-cyan-300 scale-110'
-                      : 'bg-neutral-600 text-neutral-200 border-neutral-500'
-                  }`}
-                  title={`Press ${keyboardIndex} to play`}
-                >
-                  {keyboardIndex}
-                </div>
-              )}
-              {/* Close icon - shown for disabled sections or markers not starting a section */}
-              {showCloseIcon && (
-                <div
-                  className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-colors hover:bg-neutral-600 hover:text-white"
+                  className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-colors hover:bg-red-600 hover:text-white"
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onDeleteMarker) {
