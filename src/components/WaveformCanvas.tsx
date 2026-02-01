@@ -672,11 +672,22 @@ export function WaveformCanvas({
           return (
             <div
               key={`close-${marker.id}`}
-              className="absolute flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none"
+              className="absolute flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer"
               style={{
                 left: pixelX,
                 top: 4,
                 transform: 'translateX(-50%)',
+              }}
+              onClick={(e) => {
+                // Stop propagation to prevent waveform click/drag behavior
+                e.stopPropagation();
+                if (onDeleteMarker) {
+                  onDeleteMarker(marker.id);
+                }
+              }}
+              onMouseDown={(e) => {
+                // Stop propagation to prevent marker selection/drag
+                e.stopPropagation();
               }}
             >
               ×
