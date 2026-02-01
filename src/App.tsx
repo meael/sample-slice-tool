@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { DropZone } from './components/DropZone';
 import { WaveformCanvas } from './components/WaveformCanvas';
 import { MarkerControlStrip, type ExportFormat } from './components/MarkerControlStrip';
@@ -16,6 +16,7 @@ import { useKeyboardControls } from './hooks/useKeyboardControls';
 import { useExportProgress } from './hooks/useExportProgress';
 import { useToast } from './hooks/useToast';
 import { Toast } from './components/Toast';
+import { getSections } from './utils/sections';
 import type { WaveformPeaks } from './types/waveform';
 
 function App() {
@@ -35,6 +36,9 @@ function App() {
 
   // Marker state management
   const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
+
+  // Calculate sections from markers
+  const sections = useMemo(() => getSections(markers, audioDuration), [markers, audioDuration]);
 
   // Audio playback
   const { playSegment, stop, pause, resume, state: playbackState, currentTime: playbackCurrentTime, segmentStart, segmentEnd } = usePlayback({ audioBuffer });
@@ -277,6 +281,7 @@ function App() {
             playbackCurrentTime={playbackCurrentTime}
             playbackSegmentStart={segmentStart}
             playbackSegmentEnd={segmentEnd}
+            sections={sections}
           />
         </div>
       </div>

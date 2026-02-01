@@ -1,48 +1,46 @@
 # Ralph Progress Log
-Started: Sun Feb  1 12:05:53 EET 2026
+Started: Sun Feb  1 16:04:08 EET 2026
+
+## Codebase Patterns
+- Use `import type` for type-only imports (verbatimModuleSyntax is enabled)
+- Utils go in `src/utils/` directory
+- Types go in `src/types/` directory with their own files
+- Use `void` to silence unused parameter warnings when params are required by API but not used
+
 ---
 
-## 2026-02-01 - US-004
-- Added close icon component for markers in WaveformCanvas
-- Close icon (×) renders as HTML overlay positioned above each marker
-- Uses Tailwind classes for styling: 16x16px rounded-full, neutral-700 background, neutral-300 text
-- Icon positioned centered horizontally above marker line using transform translateX(-50%)
-- Added containerWidth state to enable positioning calculations during render
-- Files changed: `src/components/WaveformCanvas.tsx`, `scripts/ralph/prd.json`
+## 2026-02-01 16:10 - US-001
+- Implemented `getSections(markers, duration)` helper function in `src/utils/sections.ts`
+- Created Section interface with fields: id, startMarker, endMarker, startTime, endTime, name
+- Function returns sections only between consecutive markers (not before first or after last)
+- Single marker returns empty array
+- Files changed: `src/utils/sections.ts` (new file)
 - **Learnings for future iterations:**
-  - Cannot access refs during render in React - use state for values needed in JSX
-  - Track container width in state (updated in drawWaveform) for overlay positioning
-  - Use `getMarkerPixelX` helper with containerWidth state to calculate marker positions
-  - Use `isMarkerVisible` helper to filter markers outside visible range
-  - HTML overlays with position:absolute work well for interactive elements on canvas
-
-## 2026-02-01 - US-005
-- Close icon rendering on all markers was completed as part of US-004
-- Verified: Icons render on every marker, positions update with zoom/pan
-- No additional code changes needed
-- Files changed: `scripts/ralph/prd.json`
+  - This codebase uses `verbatimModuleSyntax`, so type imports must use `import type`
+  - Section name is inherited from `startMarker.name`
+  - Section id format is `section-${startMarker.id}-${endMarker.id}`
 ---
 
-## 2026-02-01 - US-006
-- Added click handler to close icon that calls onDeleteMarker with marker.id
-- Added onMouseDown handler with stopPropagation to prevent marker selection/drag
-- onClick handler also calls stopPropagation to prevent waveform click behavior
-- Added cursor-pointer class for visual feedback that icon is clickable
-- Files changed: `src/components/WaveformCanvas.tsx`, `scripts/ralph/prd.json`
+## 2026-02-01 16:20 - US-002
+- Moved Section interface from `src/utils/sections.ts` to dedicated type file `src/types/section.ts`
+- Updated `src/utils/sections.ts` to import and re-export Section from new location
+- Files changed: `src/types/section.ts` (new file), `src/utils/sections.ts` (updated imports)
 - **Learnings for future iterations:**
-  - Use both onClick and onMouseDown with stopPropagation to prevent parent element handlers
-  - onMouseDown prevents drag initiation, onClick prevents click-to-add-marker behavior
-  - The existing onDeleteMarker prop was already wired up - just needed to add handlers
+  - Types should be in their own files in `src/types/` directory
+  - Can re-export types from utils for convenience: `export type { Section } from '../types/section'`
+  - Section type can be imported from either `src/types/section.ts` or `src/utils/sections.ts`
 ---
 
-## 2026-02-01 - US-007
-- Added hover feedback to close icon using Tailwind hover utilities
-- Added `hover:bg-neutral-600 hover:text-white` for brighter appearance on hover
-- Added `transition-colors` for smooth color transition effect
-- Cursor pointer was already in place from US-006
-- Files changed: `src/components/WaveformCanvas.tsx`, `scripts/ralph/prd.json`
+## 2026-02-01 16:35 - US-003
+- Added `sections` prop to `WaveformCanvas` component interface
+- Modified `drawWaveform` to render inactive areas (before first marker, after last marker) in grayscale
+- Grayscale color calculated using luminance formula: `0.299*R + 0.587*G + 0.114*B`
+- When no sections exist (backwards compatibility), entire waveform renders in normal color
+- Updated `App.tsx` to calculate sections using `getSections` (via `useMemo`) and pass to `WaveformCanvas`
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
 - **Learnings for future iterations:**
-  - Tailwind hover utilities (hover:bg-*, hover:text-*) work well for interactive feedback
-  - `transition-colors` provides smooth hover transitions without additional CSS
-  - Simple hover effects can be achieved entirely with Tailwind classes
+  - Use `useMemo` to memoize expensive calculations like `getSections(markers, audioDuration)`
+  - The waveform color is a hex string (e.g., `#22d3ee`), parse with regex to extract RGB
+  - Grayscale rendering: convert RGB to single gray value using perceptual luminance weights
+  - When modifying canvas drawing, ensure variables like `rangeStart` are not declared twice
 ---

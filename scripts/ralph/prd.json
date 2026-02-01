@@ -1,119 +1,203 @@
 {
   "project": "Audio Slice Tool",
-  "branchName": "ralph/marker-hover-preview-deletion",
-  "description": "Marker UX enhancements - Add hover preview for marker placement and close icon for direct marker deletion",
+  "branchName": "ralph/section-validity-layout",
+  "description": "Section validity and layout - Define sections as marker pairs, render inactive areas grayscale, reposition section controls between markers, fix z-index layering",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Add hover time tracking to WaveformCanvas",
-      "description": "As a developer, I need to track the cursor position over the waveform to enable hover preview functionality.",
+      "title": "Create getSections helper function",
+      "description": "As a developer, I need a helper function to calculate valid sections from markers.",
       "acceptanceCriteria": [
-        "Add hoverTime state (number | null) to WaveformCanvas component",
-        "Update hoverTime on mouse move over waveform area",
-        "Set hoverTime to null on mouse leave",
-        "Convert pixel position to audio time using existing zoom/pan logic",
+        "Create getSections(markers, duration) function in src/utils/sections.ts or similar",
+        "Returns array of Section objects: {id, startMarker, endMarker, startTime, endTime, name}",
+        "Section exists only between consecutive markers (marker N to marker N+1)",
+        "Range before first marker is NOT a section",
+        "Range after last marker is NOT a section",
+        "Single marker alone returns empty array (no sections)",
+        "Section name inherited from startMarker.name",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": "Implemented together with US-002 and US-003"
+      "notes": ""
     },
     {
       "id": "US-002",
-      "title": "Render preview marker on hover",
-      "description": "As a user, I want to see a preview of where a marker will be placed when I hover over the waveform.",
+      "title": "Add Section type definition",
+      "description": "As a developer, I need a Section type to represent valid audio sections.",
       "acceptanceCriteria": [
-        "Semi-transparent vertical line (50% opacity) renders at hoverTime position",
-        "Preview uses same shape as placed markers (vertical line spanning waveform height)",
-        "Preview color matches placed marker color but with reduced opacity",
-        "Preview position updates smoothly as cursor moves",
-        "No visual jitter or lag while moving cursor",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Create Section interface in src/types/section.ts",
+        "Fields: id (string), startMarker (Marker), endMarker (Marker), startTime (number), endTime (number), name (string)",
+        "Export Section type for use in components and hooks",
+        "Typecheck passes"
       ],
       "priority": 2,
       "passes": true,
-      "notes": "Implemented together with US-001 and US-003"
+      "notes": ""
     },
     {
       "id": "US-003",
-      "title": "Hide preview when hovering existing markers",
-      "description": "As a user, I don't want to see the preview marker when my cursor is over an existing marker.",
+      "title": "Render inactive waveform areas in grayscale",
+      "description": "As a user, I want to clearly see which parts of the waveform are not valid sections.",
       "acceptanceCriteria": [
-        "Preview marker is hidden when cursor is within 10px of an existing marker",
-        "Check all markers in the markers array for proximity",
-        "Preview reappears immediately when cursor moves away from markers",
+        "WaveformCanvas receives sections array as prop",
+        "Waveform before first marker rendered in grayscale (desaturated color)",
+        "Waveform after last marker rendered in grayscale",
+        "Active sections (between markers) rendered in normal waveform color",
+        "Grayscale achieved via desaturated RGB values, not just opacity",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 3,
       "passes": true,
-      "notes": "Implemented together with US-001 and US-002"
+      "notes": ""
     },
     {
       "id": "US-004",
-      "title": "Add close icon component for markers",
-      "description": "As a developer, I need a close icon component that can be rendered above each marker.",
+      "title": "Update keyboard playback for section-based indices",
+      "description": "As a user, I want keyboard shortcuts to play sections, not marker-based ranges.",
       "acceptanceCriteria": [
-        "Create MarkerCloseIcon component or add to existing marker rendering",
-        "Icon displays '×' character or similar close indicator",
-        "Icon is positioned centered above the marker line",
-        "Icon has small circular or pill background for visibility",
-        "Icon size approximately 16-20px clickable area",
-        "Styled consistently with app design (dark background, light icon)",
-        "Typecheck passes"
+        "Key 1 plays section 1 (audio between marker 0 and marker 1)",
+        "Key 2 plays section 2 (audio between marker 1 and marker 2)",
+        "Key N plays section N if it exists",
+        "Pressing key for non-existent section does nothing",
+        "Maximum 9 sections playable via keyboard (keys 1-9)",
+        "Update useKeyboardControls to use sections array",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-005",
-      "title": "Render close icon on all placed markers",
-      "description": "As a user, I want to see a close icon on each marker so I know I can delete it.",
+      "title": "Remove number badges from marker control strip",
+      "description": "As a developer, I need to remove keyboard number badges since they no longer apply to individual markers.",
       "acceptanceCriteria": [
-        "Close icon renders above every placed marker (always visible)",
-        "Icon position updates correctly when zooming/panning",
-        "Icon visible at all zoom levels",
-        "Icons do not overlap with each other (markers too close edge case acceptable)",
+        "Remove number badges (1-9) from MarkerControlStrip",
+        "Delete icons remain positioned above their markers",
+        "Control strip still displays marker controls (delete, name, export)",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 5,
-      "passes": true,
-      "notes": "Implemented together with US-004"
+      "passes": false,
+      "notes": ""
     },
     {
       "id": "US-006",
-      "title": "Delete marker via close icon click",
-      "description": "As a user, I want to click the close icon to remove a marker immediately.",
+      "title": "Create SectionHeader component",
+      "description": "As a developer, I need a component to display section name and export button between markers.",
       "acceptanceCriteria": [
-        "Clicking close icon calls deleteMarker with the marker's id",
-        "Marker is removed from UI immediately",
-        "Click event stops propagation (does not trigger waveform click)",
-        "Click does not trigger marker selection or drag",
-        "Works for any marker, not just selected marker",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Create SectionHeader component in src/components/SectionHeader.tsx",
+        "Receives section, onExport, onUpdateName, containerWidth, visibleRange props",
+        "Displays section name and export button as a grouped unit",
+        "Positioned horizontally centered between section start and end markers",
+        "Export button immediately right of name with small gap (4-8px)",
+        "Typecheck passes"
       ],
       "priority": 6,
-      "passes": true,
+      "passes": false,
       "notes": ""
     },
     {
       "id": "US-007",
-      "title": "Add hover feedback to close icon",
-      "description": "As a user, I want visual feedback when hovering the close icon so I know it's interactive.",
+      "title": "Integrate SectionHeader into control strip",
+      "description": "As a user, I want section names and export buttons displayed between their defining markers.",
       "acceptanceCriteria": [
-        "Cursor changes to pointer when hovering close icon",
-        "Close icon shows hover state (brighter color or increased opacity)",
-        "Hover state is visually distinct from default state",
-        "Hover state does not affect nearby markers or waveform",
+        "SectionHeader components rendered in control strip for each section",
+        "Headers positioned between their start and end markers",
+        "Delete icons remain above individual markers (unchanged)",
+        "Headers move correctly when zooming/panning",
         "Typecheck passes",
         "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
-      "passes": true,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Implement name truncation with available space calculation",
+      "description": "As a user, I want section names to truncate when there isn't enough space between markers.",
+      "acceptanceCriteria": [
+        "Calculate available width: marker2X - marker1X - buttonWidth - padding",
+        "If name fits, show full name",
+        "If name doesn't fit, truncate with ellipsis",
+        "Track whether name is truncated in state",
+        "Minimum display: hide name if space < 40px, show only export button",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Add popover for editing truncated names",
+      "description": "As a user, I want to click on a truncated name to edit it in a popover.",
+      "acceptanceCriteria": [
+        "Clicking truncated name opens floating popover",
+        "Popover contains input field with full name",
+        "Input pre-filled and text selected",
+        "Enter saves, Escape cancels, blur saves",
+        "Popover positioned below name, doesn't overflow viewport",
+        "Full (non-truncated) names edit inline as before",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Fix z-index layering for control strip",
+      "description": "As a user, I want section controls to always be visible and clickable above the waveform.",
+      "acceptanceCriteria": [
+        "Control strip has explicit z-index (e.g., z-20) higher than waveform",
+        "Waveform canvas has lower z-index (e.g., z-10 or default)",
+        "Popovers have highest z-index (e.g., z-50)",
+        "No click events intercepted by waveform when clicking controls",
+        "Controls always visible at all zoom levels",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Update export handlers to use sections",
+      "description": "As a developer, I need to update export logic to use section definitions instead of marker-based ranges.",
+      "acceptanceCriteria": [
+        "Individual export uses section.startTime and section.endTime",
+        "Bulk export iterates over sections array",
+        "No export available for ranges outside valid sections",
+        "Export All button hidden when no valid sections exist",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Update playback progress to respect section boundaries",
+      "description": "As a user, I want playback progress fill to only show within valid sections.",
+      "acceptanceCriteria": [
+        "Playback fill only appears within the active section boundaries",
+        "Fill does not extend into inactive (grayscale) areas",
+        "Progress correctly bounded by section start and end times",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
       "notes": ""
     }
   ]

@@ -2,6 +2,7 @@ import { useRef, useEffect, useCallback, useState } from 'react';
 import type { WaveformPeaks } from '../types/waveform';
 import type { VisibleRange } from '../types/zoom';
 import type { Marker } from '../types/marker';
+import type { Section } from '../types/section';
 import type { PlaybackState } from '../hooks/usePlayback';
 import { ContextMenu } from './ContextMenu';
 
@@ -49,6 +50,8 @@ export interface WaveformCanvasProps {
   playbackSegmentStart?: number;
   /** End time of the current playback segment */
   playbackSegmentEnd?: number;
+  /** Array of valid sections (for grayscale rendering of inactive areas) */
+  sections?: Section[];
 }
 
 /**
@@ -76,6 +79,7 @@ export function WaveformCanvas({
   playbackCurrentTime = 0,
   playbackSegmentStart = 0,
   playbackSegmentEnd = 0,
+  sections = [],
 }: WaveformCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -154,8 +158,36 @@ export function WaveformCanvas({
     // Calculate how many peaks per pixel
     const peaksPerPixel = visiblePeakCount / width;
 
-    // Draw waveform
-    ctx.fillStyle = waveformColor;
+    // Calculate visible range for time-based operations
+    const rangeStart = visibleRange?.start ?? 0;
+    const rangeEnd = visibleRange?.end ?? duration;
+    const rangeDuration = rangeEnd - rangeStart;
+
+    // Parse waveform color to RGB for grayscale calculation
+    const parseHexColor = (hex: string): { r: number; g: number; b: number } => {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result
+        ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
+        : { r: 34, g: 211, b: 238 }; // Default cyan-400
+    };
+
+    const { r, g, b } = parseHexColor(waveformColor);
+    // Calculate grayscale using luminance formula (perceptual weighting)
+    const grayValue = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+    const grayscaleColor = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
+
+    // Determine if a time position is within an active section
+    const isInActiveSection = (time: number): boolean => {
+      if (sections.length === 0) return true; // No sections = all active (backwards compatibility)
+      return sections.some(section => time >= section.startTime && time <= section.endTime);
+    };
+
+    // Convert pixel X position to time
+    const pixelXToTime = (x: number): number => {
+      return rangeStart + (x / width) * rangeDuration;
+    };
+
+    // Draw waveform with grayscale for inactive areas
     const centerY = canvasHeight / 2;
     const maxAmplitude = canvasHeight / 2 - 2; // Leave 2px margin
 
@@ -167,6 +199,10 @@ export function WaveformCanvas({
         const peakIndex = startPeakIndex + i;
         const peakValue = peakData[peakIndex];
         const x = i * pixelsPerPeak;
+
+        // Determine color based on whether this position is in an active section
+        const time = pixelXToTime(x);
+        ctx.fillStyle = isInActiveSection(time) ? waveformColor : grayscaleColor;
 
         // Draw symmetric waveform (mirrored above and below center)
         const barHeight = Math.abs(peakValue) * maxAmplitude;
@@ -190,6 +226,10 @@ export function WaveformCanvas({
           }
         }
 
+        // Determine color based on whether this position is in an active section
+        const time = pixelXToTime(x);
+        ctx.fillStyle = isInActiveSection(time) ? waveformColor : grayscaleColor;
+
         // Draw bar
         const barHeight = maxValue * maxAmplitude;
         ctx.fillRect(x, centerY - barHeight, 1, barHeight * 2);
@@ -203,11 +243,6 @@ export function WaveformCanvas({
     ctx.moveTo(0, centerY);
     ctx.lineTo(width, centerY);
     ctx.stroke();
-
-    // Calculate visible range for markers and playback progress
-    const rangeStart = visibleRange?.start ?? 0;
-    const rangeEnd = visibleRange?.end ?? duration;
-    const rangeDuration = rangeEnd - rangeStart;
 
     // Draw playback progress fill
     if ((playbackState === 'playing' || playbackState === 'paused') && playbackSegmentEnd > playbackSegmentStart) {
@@ -267,7 +302,7 @@ export function WaveformCanvas({
       ctx.lineTo(x, canvasHeight);
       ctx.stroke();
     }
-  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor, hoverTime, playbackState, playbackCurrentTime, playbackSegmentStart, playbackSegmentEnd]);
+  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor, hoverTime, playbackState, playbackCurrentTime, playbackSegmentStart, playbackSegmentEnd, sections]);
 
   // Draw on mount and when dependencies change
   useEffect(() => {
