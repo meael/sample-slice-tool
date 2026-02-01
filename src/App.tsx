@@ -257,9 +257,6 @@ function App() {
             onDeleteMarker={deleteMarker}
             onUpdateMarkerName={updateMarkerName}
             onExportMarker={handleExportMarker}
-            playbackState={playbackState}
-            playbackSegmentStart={segmentStart}
-            playbackSegmentEnd={segmentEnd}
             exportingMarkerId={exportingMarkerId}
           />
           {/* Waveform canvas */}
