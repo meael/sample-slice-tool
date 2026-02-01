@@ -76,7 +76,7 @@ export function MarkerControlStrip({
 
   return (
     <div
-      className="relative w-full"
+      className="relative w-full z-20"
       style={{
         height: 28,
         backgroundColor: '#111',

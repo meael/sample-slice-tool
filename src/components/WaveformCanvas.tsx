@@ -691,7 +691,7 @@ export function WaveformCanvas({
     <>
       <div
         ref={containerRef}
-        className="w-full flex items-center justify-center relative"
+        className="w-full flex items-center justify-center relative z-10"
         style={{ cursor: onPan ? 'grab' : 'default' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleContainerMouseMove}
