@@ -95,6 +95,23 @@ export function MarkerControlStrip({
 
   const keyboardIndexMap = getKeyboardIndexMap();
 
+  /**
+   * Build a map from marker ID to keyboard index.
+   * A marker gets a keyboard index if it's the start marker of an enabled section.
+   */
+  const getMarkerKeyboardIndexMap = (): Map<string, number> => {
+    const map = new Map<string, number>();
+    sections.forEach(section => {
+      const keyboardIndex = keyboardIndexMap.get(section.id);
+      if (keyboardIndex !== undefined) {
+        map.set(section.startMarker.id, keyboardIndex);
+      }
+    });
+    return map;
+  };
+
+  const markerKeyboardIndexMap = getMarkerKeyboardIndexMap();
+
   return (
     <div
       className="relative w-full z-20"
@@ -119,19 +136,19 @@ export function MarkerControlStrip({
             onExport={onExportSection}
             isExporting={exportingSectionId === section.id}
             onToggleEnabled={onToggleSectionEnabled}
-            keyboardIndex={keyboardIndexMap.get(section.id)}
           />
         );
       })}
 
-      {/* Render delete icons above each marker */}
+      {/* Render delete icons and keyboard badges above each marker */}
       {markers.map((marker) => {
         if (!isMarkerVisible(marker.time)) return null;
         const pixelX = getPixelX(marker.time);
+        const keyboardIndex = markerKeyboardIndexMap.get(marker.id);
         return (
           <div
             key={`marker-delete-${marker.id}`}
-            className="absolute"
+            className="absolute flex items-center gap-1"
             style={{
               left: pixelX,
               top: '50%',
@@ -154,6 +171,15 @@ export function MarkerControlStrip({
             >
               ×
             </div>
+            {/* Keyboard badge - only show for enabled sections */}
+            {keyboardIndex !== undefined && (
+              <div
+                className="flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded bg-neutral-600 text-neutral-200 text-[10px] font-medium leading-none select-none border border-neutral-500 shadow-sm"
+                title={`Press ${keyboardIndex} to play`}
+              >
+                {keyboardIndex}
+              </div>
+            )}
           </div>
         );
       })}
