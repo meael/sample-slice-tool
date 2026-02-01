@@ -9,6 +9,7 @@ export interface UseKeyboardControlsOptions {
   onPlaySegment: (startTime: number, endTime: number) => void;
   onPause: () => void;
   onResume: () => void;
+  onStop: () => void;
 }
 
 /**
@@ -26,6 +27,7 @@ function isInputElement(target: EventTarget | null): boolean {
  * - Keys 1-9 play the corresponding marker segment
  * - Key N plays segment from marker N-1 to marker N (or end of audio)
  * - Spacebar pauses/resumes playback
+ * - Escape stops playback and resets to idle
  * - Ignores key events when input/textarea is focused
  */
 export function useKeyboardControls({
@@ -35,6 +37,7 @@ export function useKeyboardControls({
   onPlaySegment,
   onPause,
   onResume,
+  onStop,
 }: UseKeyboardControlsOptions): void {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -42,6 +45,15 @@ export function useKeyboardControls({
       if (isInputElement(event.target)) return;
 
       const key = event.key;
+
+      // Escape: stop playback immediately
+      if (key === 'Escape') {
+        if (playbackState === 'playing' || playbackState === 'paused') {
+          event.preventDefault();
+          onStop();
+        }
+        return;
+      }
 
       // Spacebar: pause/resume
       if (key === ' ') {
@@ -83,7 +95,7 @@ export function useKeyboardControls({
         onPlaySegment(startTime, endTime);
       }
     },
-    [markers, duration, playbackState, onPlaySegment, onPause, onResume]
+    [markers, duration, playbackState, onPlaySegment, onPause, onResume, onStop]
   );
 
   useEffect(() => {
