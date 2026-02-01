@@ -21,6 +21,8 @@ export interface SectionHeaderProps {
   onExport?: (sectionId: string, format: ExportFormat) => void;
   /** Whether this section is currently being exported */
   isExporting?: boolean;
+  /** Callback when user toggles section enabled state */
+  onToggleEnabled?: (sectionId: string) => void;
 }
 
 interface EditableNameProps {
@@ -270,10 +272,50 @@ function ExportDropdown({ sectionId, onExport, isExporting }: ExportDropdownProp
 }
 
 // Constants for layout calculations
-const EXPORT_BUTTON_WIDTH = 16; // w-4 = 16px
+const BUTTON_WIDTH = 16; // w-4 = 16px
 const GAP_WIDTH = 4; // gap-1 = 4px
 const PADDING = 8; // safety margin on each side
 const MIN_NAME_WIDTH = 40; // minimum width to show name
+
+interface EnableToggleProps {
+  enabled: boolean;
+  sectionId: string;
+  onToggleEnabled: (sectionId: string) => void;
+}
+
+/**
+ * Toggle button for enabling/disabling a section
+ * Shows a power icon: bright when enabled, dim when disabled
+ */
+function EnableToggle({ enabled, sectionId, onToggleEnabled }: EnableToggleProps) {
+  return (
+    <div
+      className={`flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-xs select-none cursor-pointer transition-all hover:opacity-80 ${
+        enabled ? 'text-cyan-400' : 'text-neutral-500'
+      }`}
+      onClick={(e) => {
+        e.stopPropagation();
+        onToggleEnabled(sectionId);
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
+      title={enabled ? 'Disable section' : 'Enable section'}
+    >
+      <svg
+        width="10"
+        height="10"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
+        <line x1="12" y1="2" x2="12" y2="12" />
+      </svg>
+    </div>
+  );
+}
 
 /**
  * Section header component that displays section name and export button
@@ -288,6 +330,7 @@ export function SectionHeader({
   onUpdateName,
   onExport,
   isExporting,
+  onToggleEnabled,
 }: SectionHeaderProps) {
   // Track whether the name is truncated (for future popover feature)
   const [isTruncated, setIsTruncated] = useState(false);
@@ -312,10 +355,11 @@ export function SectionHeader({
   const centerX = (startX + endX) / 2;
 
   // Calculate available width for the name
-  // Available space = distance between markers - export button - gap - padding
+  // Available space = distance between markers - buttons - gaps - padding
   const sectionWidth = endX - startX;
-  const exportButtonSpace = onExport ? EXPORT_BUTTON_WIDTH + GAP_WIDTH : 0;
-  const availableNameWidth = sectionWidth - exportButtonSpace - PADDING * 2;
+  const exportButtonSpace = onExport ? BUTTON_WIDTH + GAP_WIDTH : 0;
+  const toggleButtonSpace = onToggleEnabled ? BUTTON_WIDTH + GAP_WIDTH : 0;
+  const availableNameWidth = sectionWidth - exportButtonSpace - toggleButtonSpace - PADDING * 2;
 
   // Determine if we should show the name based on available space
   const showName = availableNameWidth >= MIN_NAME_WIDTH;
@@ -368,6 +412,14 @@ export function SectionHeader({
           sectionId={section.id}
           onExport={onExport}
           isExporting={isExporting}
+        />
+      )}
+      {/* Enable/disable toggle */}
+      {onToggleEnabled && (
+        <EnableToggle
+          enabled={section.enabled}
+          sectionId={section.id}
+          onToggleEnabled={onToggleEnabled}
         />
       )}
     </div>

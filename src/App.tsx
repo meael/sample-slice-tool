@@ -35,7 +35,7 @@ function App() {
   });
 
   // Marker state management
-  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
+  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, updateMarkerEnabled, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
 
   // Calculate sections from markers
   const sections = useMemo(() => getSections(markers, audioDuration), [markers, audioDuration]);
@@ -105,6 +105,14 @@ function App() {
     if (!section) return;
     updateMarkerName(section.startMarker.id, name);
   }, [sections, updateMarkerName]);
+
+  // Handle section enabled toggle (updates the start marker's enabled state)
+  const handleToggleSectionEnabled = useCallback((sectionId: string) => {
+    // Find the section and toggle its start marker's enabled state
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+    updateMarkerEnabled(section.startMarker.id, !section.enabled);
+  }, [sections, updateMarkerEnabled]);
 
   // Handle export all sections as ZIP
   const handleExportAll = useCallback(async (format: ExportAllFormat) => {
@@ -257,6 +265,7 @@ function App() {
             onUpdateSectionName={handleUpdateSectionName}
             onExportSection={handleExportSection}
             exportingSectionId={exportingSectionId}
+            onToggleSectionEnabled={handleToggleSectionEnabled}
           />
           {/* Waveform canvas */}
           <WaveformCanvas

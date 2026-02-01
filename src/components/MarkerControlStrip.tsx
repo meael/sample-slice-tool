@@ -24,6 +24,8 @@ export interface MarkerControlStripProps {
   onExportSection?: (sectionId: string, format: ExportFormat) => void;
   /** ID of section currently being exported (for spinner) */
   exportingSectionId?: string | null;
+  /** Callback when user toggles a section's enabled state */
+  onToggleSectionEnabled?: (sectionId: string) => void;
 }
 
 /**
@@ -40,6 +42,7 @@ export function MarkerControlStrip({
   onUpdateSectionName,
   onExportSection,
   exportingSectionId,
+  onToggleSectionEnabled,
 }: MarkerControlStripProps) {
   /**
    * Calculate the pixel X position for a time value
@@ -97,6 +100,7 @@ export function MarkerControlStrip({
             onUpdateName={onUpdateSectionName}
             onExport={onExportSection}
             isExporting={exportingSectionId === section.id}
+            onToggleEnabled={onToggleSectionEnabled}
           />
         );
       })}
