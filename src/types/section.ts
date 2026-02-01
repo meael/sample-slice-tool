@@ -16,4 +16,6 @@ export interface Section {
   endTime: number;
   /** Display name (inherited from startMarker) */
   name: string;
+  /** Whether the section is enabled (inherited from startMarker) */
+  enabled: boolean;
 }

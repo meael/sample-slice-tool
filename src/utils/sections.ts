@@ -40,6 +40,7 @@ export function getSections(markers: Marker[], duration?: number): Section[] {
       startTime: startMarker.time,
       endTime: endMarker.time,
       name: startMarker.name,
+      enabled: startMarker.enabled ?? true,
     });
   }
 
