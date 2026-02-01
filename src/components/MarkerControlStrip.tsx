@@ -104,6 +104,17 @@ export function MarkerControlStrip({
               transform: 'translate(-50%, -50%)',
             }}
           >
+            {/* Section name */}
+            <div
+              className="text-neutral-300 select-none truncate"
+              style={{
+                fontSize: 12,
+                maxWidth: 80,
+              }}
+              title={marker.name}
+            >
+              {marker.name}
+            </div>
             {/* Number badge */}
             {badgeNumber !== null && (
               <div
