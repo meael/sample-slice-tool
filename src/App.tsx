@@ -5,7 +5,7 @@ import { MarkerControlStrip, type ExportFormat } from './components/MarkerContro
 import { FileLoaderButton } from './components/FileLoaderButton';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
-import { encodeWav, sanitizeFilename } from './services/audioExport';
+import { encodeWav, encodeMp3, sanitizeFilename } from './services/audioExport';
 import { saveAs } from 'file-saver';
 import { useZoom } from './hooks/useZoom';
 import { useMarkers } from './hooks/useMarkers';
@@ -61,10 +61,14 @@ function App() {
       ? markers[markerIndex + 1].time
       : audioDuration;
 
-    // Only support WAV for now (US-009); MP3 will be added in US-010
+    // Export based on selected format
     if (format === 'wav') {
       const blob = encodeWav(audioBuffer, startTime, endTime);
       const filename = `${sanitizeFilename(marker.name)}.wav`;
+      saveAs(blob, filename);
+    } else if (format === 'mp3') {
+      const blob = encodeMp3(audioBuffer, startTime, endTime);
+      const filename = `${sanitizeFilename(marker.name)}.mp3`;
       saveAs(blob, filename);
     }
   }, [audioBuffer, markers, audioDuration]);
