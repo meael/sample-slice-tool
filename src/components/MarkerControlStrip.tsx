@@ -166,16 +166,17 @@ export function MarkerControlStrip({
             onMouseEnter={() => setHoveredMarkerId(marker.id)}
             onMouseLeave={() => setHoveredMarkerId(null)}
           >
-            {/* Top row: keyboard badge and delete icon */}
-            <div className="flex items-center gap-1 mt-[5px]">
-              {/* Keyboard badge - only show for enabled sections */}
+            {/* Top row: keyboard badge (positioned left) and delete icon (centered) */}
+            <div className="relative flex items-center justify-center mt-[5px]">
+              {/* Keyboard badge - positioned to the left of center */}
               {keyboardIndex !== undefined && (
                 <div
-                  className={`flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-all duration-200 ${
+                  className={`absolute flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-all duration-200 ${
                     pressedKeyboardIndex === keyboardIndex
                       ? 'bg-cyan-400 text-neutral-900 border-cyan-300 scale-110'
                       : 'bg-neutral-600 text-neutral-200 border-neutral-500'
                   }`}
+                  style={{ right: '100%', marginRight: '4px' }}
                   title={`Press ${keyboardIndex} to play`}
                 >
                   {keyboardIndex}

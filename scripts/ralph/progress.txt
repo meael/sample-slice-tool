@@ -22,3 +22,26 @@ Started: Sun Feb  1 17:55:14 EET 2026
   - Visual active state uses `draggingMarkerId` state variable (triggers re-render) while drag detection uses `draggingMarkerIdRef` (no re-render needed during mouse events)
   - Markers can be deleted via: context menu (right-click) or × button in MarkerControlStrip
 ---
+
+## 2026-02-01 - US-003
+- Expanded marker hover and drag hit area from 10px to 16px threshold
+- The `MARKER_HIT_THRESHOLD` constant controls the invisible hit area for marker interaction
+- Files changed:
+  - `src/components/WaveformCanvas.tsx`
+- **Learnings for future iterations:**
+  - `MARKER_HIT_THRESHOLD` (line ~10 in WaveformCanvas.tsx) controls how far from a marker line users can click to grab it
+  - The `findMarkerAtPixel` function finds the nearest marker within the threshold, so close markers are handled correctly (nearest wins)
+  - Hit area is invisible - purely for hit-testing, no visual changes
+---
+
+## 2026-02-01 - US-004
+- Fixed keyboard badge and close icon alignment above markers
+- Close (×) icon is now centered directly above the marker line
+- Keyboard badge is positioned to the left of the close icon using absolute positioning
+- Files changed:
+  - `src/components/MarkerControlStrip.tsx`
+- **Learnings for future iterations:**
+  - Marker control elements (keyboard badge, close icon, drag arrows) are rendered in `MarkerControlStrip.tsx`
+  - Use `position: absolute` with `right: 100%` to position elements to the left of a centered element
+  - The keyboard badge only appears for markers that start an enabled section (determined by `markerKeyboardIndexMap`)
+---
