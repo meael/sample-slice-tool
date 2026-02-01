@@ -3,6 +3,7 @@
 
 import { Mp3Encoder } from 'lamejs';
 import type { Mp3Encoder as Mp3EncoderType } from 'lamejs';
+import JSZip from 'jszip';
 import type JSZipType from 'jszip';
 import type { saveAs as saveAsType } from 'file-saver';
 
@@ -219,4 +220,25 @@ export function sanitizeFilename(name: string): string {
 
   // Return 'section' if result is empty
   return sanitized || 'section';
+}
+
+/**
+ * Creates a ZIP archive containing multiple files.
+ * @param files Array of objects with name and blob properties
+ * @returns Blob containing ZIP archive data
+ */
+export async function createZipArchive(
+  files: Array<{ name: string; blob: Blob }>
+): Promise<Blob> {
+  const zip = new JSZip();
+
+  // Add files to the archive in the order provided
+  for (const file of files) {
+    zip.file(file.name, file.blob);
+  }
+
+  // Generate the ZIP archive
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+  return zipBlob;
 }
