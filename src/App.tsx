@@ -7,6 +7,8 @@ import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
 import { useZoom } from './hooks/useZoom';
 import { useMarkers } from './hooks/useMarkers';
+import { usePlayback } from './hooks/usePlayback';
+import { useKeyboardControls } from './hooks/useKeyboardControls';
 import type { WaveformPeaks } from './types/waveform';
 
 function App() {
@@ -14,6 +16,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [waveformData, setWaveformData] = useState<WaveformPeaks | null>(null);
   const [audioDuration, setAudioDuration] = useState<number>(0);
+  const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
 
   // Zoom and pan state management
   const { visibleRange, zoomAtPoint, setPan, panOffset, reset: resetZoom } = useZoom({
@@ -25,6 +28,16 @@ function App() {
 
   // Marker state management
   const { markers, selectedMarkerId, addMarker, updateMarker, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
+
+  // Audio playback
+  const { playSegment } = usePlayback({ audioBuffer });
+
+  // Keyboard controls for playback (1-9 keys)
+  useKeyboardControls({
+    markers,
+    duration: audioDuration,
+    onPlaySegment: playSegment,
+  });
 
   // Waveform container ref and width for MarkerControlStrip
   const waveformContainerRef = useRef<HTMLDivElement>(null);
@@ -49,7 +62,10 @@ function App() {
 
     try {
       // Decode audio file
-      const { audioBuffer, metadata } = await audioService.decodeFile(file);
+      const { audioBuffer: decodedBuffer, metadata } = await audioService.decodeFile(file);
+
+      // Store audio buffer for playback
+      setAudioBuffer(decodedBuffer);
 
       // Set audio duration for zoom calculations
       setAudioDuration(metadata.duration);
@@ -65,7 +81,7 @@ function App() {
         4 // 4 peaks per pixel for good detail
       );
 
-      const peaks = waveformService.extractPeaks(audioBuffer, {
+      const peaks = waveformService.extractPeaks(decodedBuffer, {
         targetPeaks,
         channelStrategy: 'combine',
       });
