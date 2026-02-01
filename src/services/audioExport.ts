@@ -7,3 +7,111 @@ import type { saveAs as saveAsType } from 'file-saver';
 
 // Re-export types for use in other modules
 export type { Mp3EncoderType, JSZipType, saveAsType };
+
+/**
+ * Encodes a segment of an AudioBuffer as a WAV file.
+ * @param audioBuffer The source AudioBuffer
+ * @param startTime Start time in seconds
+ * @param endTime End time in seconds
+ * @returns Blob containing WAV audio data
+ */
+export function encodeWav(
+  audioBuffer: AudioBuffer,
+  startTime: number,
+  endTime: number
+): Blob {
+  const sampleRate = audioBuffer.sampleRate;
+  const numChannels = audioBuffer.numberOfChannels;
+
+  // Calculate sample indices for the segment
+  const startSample = Math.floor(startTime * sampleRate);
+  const endSample = Math.floor(endTime * sampleRate);
+  const numSamples = endSample - startSample;
+
+  // Extract and interleave channel data
+  const interleaved = new Float32Array(numSamples * numChannels);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = audioBuffer.getChannelData(channel);
+    for (let i = 0; i < numSamples; i++) {
+      const sampleIndex = startSample + i;
+      // Clamp to valid range in case endTime exceeds buffer length
+      const sample = sampleIndex < channelData.length ? channelData[sampleIndex] : 0;
+      // Interleave: for stereo, samples go L0, R0, L1, R1, ...
+      interleaved[i * numChannels + channel] = sample;
+    }
+  }
+
+  // Convert float32 samples to 16-bit PCM
+  const pcmData = new Int16Array(interleaved.length);
+  for (let i = 0; i < interleaved.length; i++) {
+    // Clamp to [-1, 1] then scale to 16-bit range
+    const clamped = Math.max(-1, Math.min(1, interleaved[i]));
+    pcmData[i] = clamped < 0 ? clamped * 0x8000 : clamped * 0x7fff;
+  }
+
+  // Create WAV file
+  const wavBuffer = createWavBuffer(pcmData, sampleRate, numChannels);
+
+  return new Blob([wavBuffer], { type: 'audio/wav' });
+}
+
+/**
+ * Creates a WAV file buffer from PCM data.
+ * @param pcmData 16-bit PCM samples (interleaved if stereo)
+ * @param sampleRate Sample rate in Hz
+ * @param numChannels Number of audio channels
+ * @returns ArrayBuffer containing complete WAV file
+ */
+function createWavBuffer(
+  pcmData: Int16Array,
+  sampleRate: number,
+  numChannels: number
+): ArrayBuffer {
+  const bitsPerSample = 16;
+  const bytesPerSample = bitsPerSample / 8;
+  const blockAlign = numChannels * bytesPerSample;
+  const byteRate = sampleRate * blockAlign;
+  const dataSize = pcmData.length * bytesPerSample;
+  const headerSize = 44;
+  const totalSize = headerSize + dataSize;
+
+  const buffer = new ArrayBuffer(totalSize);
+  const view = new DataView(buffer);
+
+  // RIFF header
+  writeString(view, 0, 'RIFF');
+  view.setUint32(4, totalSize - 8, true); // File size minus RIFF header
+  writeString(view, 8, 'WAVE');
+
+  // fmt subchunk
+  writeString(view, 12, 'fmt ');
+  view.setUint32(16, 16, true); // Subchunk1Size (16 for PCM)
+  view.setUint16(20, 1, true); // AudioFormat (1 = PCM)
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+
+  // data subchunk
+  writeString(view, 36, 'data');
+  view.setUint32(40, dataSize, true);
+
+  // Write PCM data
+  const offset = 44;
+  for (let i = 0; i < pcmData.length; i++) {
+    view.setInt16(offset + i * 2, pcmData[i], true);
+  }
+
+  return buffer;
+}
+
+/**
+ * Writes an ASCII string to a DataView at the specified offset.
+ */
+function writeString(view: DataView, offset: number, str: string): void {
+  for (let i = 0; i < str.length; i++) {
+    view.setUint8(offset + i, str.charCodeAt(i));
+  }
+}
