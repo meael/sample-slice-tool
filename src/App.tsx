@@ -140,6 +140,9 @@ function App() {
             visibleRange={visibleRange}
             duration={audioDuration}
             onDeleteMarker={deleteMarker}
+            playbackState={playbackState}
+            playbackSegmentStart={segmentStart}
+            playbackSegmentEnd={segmentEnd}
           />
           {/* Waveform canvas */}
           <WaveformCanvas

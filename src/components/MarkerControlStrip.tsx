@@ -1,5 +1,6 @@
 import type { Marker } from '../types/marker';
 import type { VisibleRange } from '../types/zoom';
+import type { PlaybackState } from '../hooks/usePlayback';
 
 export interface MarkerControlStripProps {
   /** Array of markers to display controls for */
@@ -12,6 +13,12 @@ export interface MarkerControlStripProps {
   duration: number;
   /** Callback when user clicks to delete a marker */
   onDeleteMarker?: (markerId: string) => void;
+  /** Current playback state */
+  playbackState?: PlaybackState;
+  /** Start time of the currently playing segment */
+  playbackSegmentStart?: number;
+  /** End time of the currently playing segment */
+  playbackSegmentEnd?: number;
 }
 
 /**
@@ -24,6 +31,9 @@ export function MarkerControlStrip({
   visibleRange,
   duration,
   onDeleteMarker,
+  playbackState,
+  playbackSegmentStart,
+  playbackSegmentEnd,
 }: MarkerControlStripProps) {
   /**
    * Calculate the pixel X position of a marker
@@ -46,6 +56,28 @@ export function MarkerControlStrip({
     const rangeStart = visibleRange?.start ?? 0;
     const rangeEnd = visibleRange?.end ?? duration;
     return time >= rangeStart && time <= rangeEnd;
+  };
+
+  /**
+   * Check if a marker's segment is currently playing
+   * Segment for marker at index N starts at markers[N-1].time (or 0 if N=0)
+   * and ends at markers[N].time (or duration if no next marker)
+   */
+  const isMarkerActive = (index: number): boolean => {
+    if (playbackState !== 'playing' && playbackState !== 'paused') return false;
+    if (playbackSegmentStart === undefined || playbackSegmentEnd === undefined) return false;
+
+    // The segment for badge (index+1) starts at markers[index].time
+    const segmentStart = markers[index].time;
+    const segmentEnd = index + 1 < markers.length ? markers[index + 1].time : duration;
+
+    // Check if current playback segment matches this marker's segment
+    // Use small epsilon for floating point comparison
+    const epsilon = 0.001;
+    return (
+      Math.abs(playbackSegmentStart - segmentStart) < epsilon &&
+      Math.abs(playbackSegmentEnd - segmentEnd) < epsilon
+    );
   };
 
   return (
@@ -75,7 +107,11 @@ export function MarkerControlStrip({
             {/* Number badge */}
             {badgeNumber !== null && (
               <div
-                className="flex items-center justify-center h-4 px-1 rounded bg-neutral-800 text-neutral-300 text-xs select-none"
+                className={`flex items-center justify-center h-4 px-1 rounded text-xs select-none ${
+                  isMarkerActive(index)
+                    ? 'bg-cyan-600 text-white'
+                    : 'bg-neutral-800 text-neutral-300'
+                }`}
                 style={{
                   fontFamily: 'monospace',
                   minWidth: 16,
