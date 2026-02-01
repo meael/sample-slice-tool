@@ -4,6 +4,7 @@ import { WaveformCanvas } from './components/WaveformCanvas';
 import { MarkerControlStrip, type ExportFormat } from './components/MarkerControlStrip';
 import { FileLoaderButton } from './components/FileLoaderButton';
 import { ExportAllButton, type ExportAllFormat } from './components/ExportAllButton';
+import { ExportProgressOverlay } from './components/ExportProgressOverlay';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
 import { encodeWav, encodeMp3, sanitizeFilename, createZipArchive } from './services/audioExport';
@@ -12,6 +13,7 @@ import { useZoom } from './hooks/useZoom';
 import { useMarkers } from './hooks/useMarkers';
 import { usePlayback } from './hooks/usePlayback';
 import { useKeyboardControls } from './hooks/useKeyboardControls';
+import { useExportProgress } from './hooks/useExportProgress';
 import type { WaveformPeaks } from './types/waveform';
 
 function App() {
@@ -46,8 +48,14 @@ function App() {
     onStop: stop,
   });
 
+  // Export progress state
+  const { isExporting, currentItem, totalItems, startExport, updateProgress, completeExport } = useExportProgress();
+
+  // Track which marker is currently being exported (for individual export spinner)
+  const [exportingMarkerId, setExportingMarkerId] = useState<string | null>(null);
+
   // Handle export of individual marker sections
-  const handleExportMarker = useCallback((markerId: string, format: ExportFormat) => {
+  const handleExportMarker = useCallback(async (markerId: string, format: ExportFormat) => {
     if (!audioBuffer) return;
 
     // Find the marker and its index
@@ -62,15 +70,26 @@ function App() {
       ? markers[markerIndex + 1].time
       : audioDuration;
 
-    // Export based on selected format
-    if (format === 'wav') {
-      const blob = encodeWav(audioBuffer, startTime, endTime);
-      const filename = `${sanitizeFilename(marker.name)}.wav`;
-      saveAs(blob, filename);
-    } else if (format === 'mp3') {
-      const blob = encodeMp3(audioBuffer, startTime, endTime);
-      const filename = `${sanitizeFilename(marker.name)}.mp3`;
-      saveAs(blob, filename);
+    // Show spinner on export button
+    setExportingMarkerId(markerId);
+
+    // Use setTimeout to allow UI to update before encoding (which can be synchronous and blocking)
+    await new Promise(resolve => setTimeout(resolve, 0));
+
+    try {
+      // Export based on selected format
+      if (format === 'wav') {
+        const blob = encodeWav(audioBuffer, startTime, endTime);
+        const filename = `${sanitizeFilename(marker.name)}.wav`;
+        saveAs(blob, filename);
+      } else if (format === 'mp3') {
+        const blob = encodeMp3(audioBuffer, startTime, endTime);
+        const filename = `${sanitizeFilename(marker.name)}.mp3`;
+        saveAs(blob, filename);
+      }
+    } finally {
+      // Clear spinner
+      setExportingMarkerId(null);
     }
   }, [audioBuffer, markers, audioDuration]);
 
@@ -78,29 +97,46 @@ function App() {
   const handleExportAll = useCallback(async (format: ExportAllFormat) => {
     if (!audioBuffer || markers.length === 0) return;
 
-    // Encode each section (markers are already sorted chronologically by useMarkers)
-    const files: Array<{ name: string; blob: Blob }> = [];
+    // Start progress tracking
+    startExport(markers.length);
 
-    for (let i = 0; i < markers.length; i++) {
-      const marker = markers[i];
-      const startTime = marker.time;
-      const endTime = i + 1 < markers.length ? markers[i + 1].time : audioDuration;
+    // Allow UI to update before starting encoding
+    await new Promise(resolve => setTimeout(resolve, 0));
 
-      // Encode based on selected format
-      const blob = format === 'wav'
-        ? encodeWav(audioBuffer, startTime, endTime)
-        : encodeMp3(audioBuffer, startTime, endTime);
+    try {
+      // Encode each section (markers are already sorted chronologically by useMarkers)
+      const files: Array<{ name: string; blob: Blob }> = [];
 
-      const extension = format === 'wav' ? '.wav' : '.mp3';
-      const filename = `${sanitizeFilename(marker.name)}${extension}`;
+      for (let i = 0; i < markers.length; i++) {
+        const marker = markers[i];
+        const startTime = marker.time;
+        const endTime = i + 1 < markers.length ? markers[i + 1].time : audioDuration;
 
-      files.push({ name: filename, blob });
+        // Update progress before encoding each item
+        updateProgress(i + 1, Math.round(((i + 1) / markers.length) * 100));
+
+        // Allow UI to update
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        // Encode based on selected format
+        const blob = format === 'wav'
+          ? encodeWav(audioBuffer, startTime, endTime)
+          : encodeMp3(audioBuffer, startTime, endTime);
+
+        const extension = format === 'wav' ? '.wav' : '.mp3';
+        const filename = `${sanitizeFilename(marker.name)}${extension}`;
+
+        files.push({ name: filename, blob });
+      }
+
+      // Create ZIP archive and download
+      const zipBlob = await createZipArchive(files);
+      saveAs(zipBlob, 'sections-export.zip');
+    } finally {
+      // Complete progress tracking
+      completeExport();
     }
-
-    // Create ZIP archive and download
-    const zipBlob = await createZipArchive(files);
-    saveAs(zipBlob, 'sections-export.zip');
-  }, [audioBuffer, markers, audioDuration]);
+  }, [audioBuffer, markers, audioDuration, startExport, updateProgress, completeExport]);
 
   // Waveform container ref and width for MarkerControlStrip
   const waveformContainerRef = useRef<HTMLDivElement>(null);
@@ -207,6 +243,7 @@ function App() {
             playbackState={playbackState}
             playbackSegmentStart={segmentStart}
             playbackSegmentEnd={segmentEnd}
+            exportingMarkerId={exportingMarkerId}
           />
           {/* Waveform canvas */}
           <WaveformCanvas
@@ -236,6 +273,13 @@ function App() {
           {error}
         </div>
       )}
+
+      {/* Export progress overlay */}
+      <ExportProgressOverlay
+        isVisible={isExporting}
+        currentItem={currentItem}
+        totalItems={totalItems}
+      />
     </div>
   );
 }

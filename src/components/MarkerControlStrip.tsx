@@ -26,6 +26,8 @@ export interface MarkerControlStripProps {
   playbackSegmentStart?: number;
   /** End time of the currently playing segment */
   playbackSegmentEnd?: number;
+  /** ID of marker currently being exported (for spinner) */
+  exportingMarkerId?: string | null;
 }
 
 interface EditableNameProps {
@@ -119,12 +121,14 @@ function EditableName({ name, markerId, markerIndex, onUpdateName }: EditableNam
 interface ExportDropdownProps {
   markerId: string;
   onExport: (markerId: string, format: ExportFormat) => void;
+  /** Whether this marker is currently being exported */
+  isExporting?: boolean;
 }
 
 /**
  * Export dropdown component with WAV and MP3 options
  */
-function ExportDropdown({ markerId, onExport }: ExportDropdownProps) {
+function ExportDropdown({ markerId, onExport, isExporting }: ExportDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -149,17 +153,25 @@ function ExportDropdown({ markerId, onExport }: ExportDropdownProps) {
 
   return (
     <div ref={dropdownRef} className="relative">
-      {/* Export button (download icon) */}
+      {/* Export button (download icon or spinner) */}
       <div
-        className="flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-neutral-300 text-xs select-none cursor-pointer transition-opacity hover:opacity-80"
+        className={`flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-neutral-300 text-xs select-none transition-opacity ${
+          isExporting ? 'cursor-wait' : 'cursor-pointer hover:opacity-80'
+        }`}
         onClick={(e) => {
           e.stopPropagation();
-          setIsOpen(!isOpen);
+          if (!isExporting) {
+            setIsOpen(!isOpen);
+          }
         }}
         onMouseDown={(e) => e.stopPropagation()}
-        title="Export section"
+        title={isExporting ? 'Exporting...' : 'Export section'}
       >
-        ↓
+        {isExporting ? (
+          <div className="w-3 h-3 border border-neutral-500 border-t-cyan-400 rounded-full animate-spin" />
+        ) : (
+          '↓'
+        )}
       </div>
       {/* Dropdown menu */}
       {isOpen && (
@@ -212,6 +224,7 @@ export function MarkerControlStrip({
   playbackState,
   playbackSegmentStart,
   playbackSegmentEnd,
+  exportingMarkerId,
 }: MarkerControlStripProps) {
   /**
    * Calculate the pixel X position of a marker
@@ -323,6 +336,7 @@ export function MarkerControlStrip({
               <ExportDropdown
                 markerId={marker.id}
                 onExport={onExportMarker}
+                isExporting={exportingMarkerId === marker.id}
               />
             )}
             {/* Close icon */}
