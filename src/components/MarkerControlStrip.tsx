@@ -116,6 +116,20 @@ export function MarkerControlStrip({
 
   const markerKeyboardIndexMap = getMarkerKeyboardIndexMap();
 
+  /**
+   * Build a map from marker ID to the section it starts (if any).
+   * Used to determine if a marker starts an enabled or disabled section.
+   */
+  const getMarkerSectionMap = (): Map<string, Section> => {
+    const map = new Map<string, Section>();
+    sections.forEach(section => {
+      map.set(section.startMarker.id, section);
+    });
+    return map;
+  };
+
+  const markerSectionMap = getMarkerSectionMap();
+
   // Track which marker is being hovered (for showing drag affordance)
   const [hoveredMarkerId, setHoveredMarkerId] = useState<string | null>(null);
 
@@ -152,7 +166,15 @@ export function MarkerControlStrip({
         if (!isMarkerVisible(marker.time)) return null;
         const pixelX = getPixelX(marker.time);
         const keyboardIndex = markerKeyboardIndexMap.get(marker.id);
+        const section = markerSectionMap.get(marker.id);
+        const isEnabledSection = section?.enabled ?? false;
         const isHovered = hoveredMarkerId === marker.id;
+
+        // For enabled sections: show keyboard label by default (close icon hidden)
+        // For disabled sections: always show close icon (will be implemented in US-003)
+        const showKeyboardLabel = isEnabledSection && keyboardIndex !== undefined;
+        const showCloseIcon = !isEnabledSection || !section;
+
         return (
           <div
             key={`marker-delete-${marker.id}`}
@@ -167,38 +189,39 @@ export function MarkerControlStrip({
             onMouseEnter={() => setHoveredMarkerId(marker.id)}
             onMouseLeave={() => setHoveredMarkerId(null)}
           >
-            {/* Top row: keyboard badge (positioned left) and delete icon (centered) */}
+            {/* Top row: keyboard label OR close icon (centered above marker line) */}
             <div className="relative flex items-center justify-center mt-[5px]">
-              {/* Keyboard badge - positioned to the left of center */}
-              {keyboardIndex !== undefined && (
+              {/* Keyboard label - shown by default for enabled sections */}
+              {showKeyboardLabel && (
                 <div
-                  className={`absolute flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-all duration-200 ${
+                  className={`flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-all duration-200 ${
                     pressedKeyboardIndex === keyboardIndex
                       ? 'bg-cyan-400 text-neutral-900 border-cyan-300 scale-110'
                       : 'bg-neutral-600 text-neutral-200 border-neutral-500'
                   }`}
-                  style={{ right: '100%', marginRight: '4px' }}
                   title={`Press ${keyboardIndex} to play`}
                 >
                   {keyboardIndex}
                 </div>
               )}
-              {/* Delete icon - centered above marker line */}
-              <div
-                className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-colors hover:bg-neutral-600 hover:text-white"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (onDeleteMarker) {
-                    onDeleteMarker(marker.id);
-                  }
-                }}
-                onMouseDown={(e) => {
-                  e.stopPropagation();
-                }}
-                title="Delete marker"
-              >
-                ×
-              </div>
+              {/* Close icon - shown for disabled sections or markers not starting a section */}
+              {showCloseIcon && (
+                <div
+                  className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-colors hover:bg-neutral-600 hover:text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onDeleteMarker) {
+                      onDeleteMarker(marker.id);
+                    }
+                  }}
+                  onMouseDown={(e) => {
+                    e.stopPropagation();
+                  }}
+                  title="Delete marker"
+                >
+                  ×
+                </div>
+              )}
             </div>
           </div>
         );
