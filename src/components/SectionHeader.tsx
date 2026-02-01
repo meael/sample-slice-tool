@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Section } from '../types/section';
 import type { VisibleRange } from '../types/zoom';
+import { SectionDropdown } from './SectionDropdown';
 
 export type ExportFormat = 'wav' | 'mp3';
 
@@ -183,160 +184,11 @@ function EditableName({ name, sectionId, sectionIndex, onUpdateName, maxWidth, i
   );
 }
 
-interface ExportDropdownProps {
-  sectionId: string;
-  onExport: (sectionId: string, format: ExportFormat) => void;
-  isExporting?: boolean;
-}
-
-/**
- * Export dropdown component with WAV and MP3 options
- */
-function ExportDropdown({ sectionId, onExport, isExporting }: ExportDropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  const handleExport = useCallback((format: ExportFormat) => {
-    onExport(sectionId, format);
-    setIsOpen(false);
-  }, [sectionId, onExport]);
-
-  return (
-    <div ref={dropdownRef} className="relative">
-      {/* Export button (download icon or spinner) */}
-      <div
-        className={`flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-neutral-300 text-xs select-none transition-opacity ${
-          isExporting ? 'cursor-wait' : 'cursor-pointer hover:opacity-80'
-        }`}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (!isExporting) {
-            setIsOpen(!isOpen);
-          }
-        }}
-        onMouseDown={(e) => e.stopPropagation()}
-        title={isExporting ? 'Exporting...' : 'Export section'}
-      >
-        {isExporting ? (
-          <div className="w-3 h-3 border border-neutral-500 border-t-cyan-400 rounded-full animate-spin" />
-        ) : (
-          '↓'
-        )}
-      </div>
-      {/* Dropdown menu */}
-      {isOpen && (
-        <div
-          className="absolute top-full left-1/2 mt-1 py-1 rounded shadow-lg z-50"
-          style={{
-            transform: 'translateX(-50%)',
-            backgroundColor: '#1f1f1f',
-            minWidth: 60,
-          }}
-        >
-          <div
-            className="px-3 py-1 text-neutral-200 text-xs cursor-pointer hover:bg-neutral-700"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleExport('wav');
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            WAV
-          </div>
-          <div
-            className="px-3 py-1 text-neutral-200 text-xs cursor-pointer hover:bg-neutral-700"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleExport('mp3');
-            }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            MP3
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 // Constants for layout calculations
-const BUTTON_WIDTH = 16; // w-4 = 16px
 const GAP_WIDTH = 4; // gap-1 = 4px
 const PADDING = 8; // safety margin on each side
 const MIN_NAME_WIDTH = 40; // minimum width to show name
-
-interface EnableToggleProps {
-  enabled: boolean;
-  sectionId: string;
-  onToggleEnabled: (sectionId: string) => void;
-}
-
-/**
- * Toggle button for enabling/disabling a section
- * Shows a power icon: bright when enabled, dim when disabled
- */
-function EnableToggle({ enabled, sectionId, onToggleEnabled }: EnableToggleProps) {
-  return (
-    <div
-      className={`flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-xs select-none cursor-pointer transition-all hover:opacity-80 ${
-        enabled ? 'text-cyan-400' : 'text-neutral-500'
-      }`}
-      onClick={(e) => {
-        e.stopPropagation();
-        onToggleEnabled(sectionId);
-      }}
-      onMouseDown={(e) => e.stopPropagation()}
-      title={enabled ? 'Disable section' : 'Enable section'}
-    >
-      <svg
-        width="10"
-        height="10"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M18.36 6.64a9 9 0 1 1-12.73 0" />
-        <line x1="12" y1="2" x2="12" y2="12" />
-      </svg>
-    </div>
-  );
-}
-
-interface KeyboardBadgeProps {
-  index: number;
-}
-
-/**
- * Badge showing the keyboard shortcut number (1-9) for a section
- * Styled consistently with other section header controls
- */
-function KeyboardBadge({ index }: KeyboardBadgeProps) {
-  return (
-    <div
-      className="flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-cyan-400 text-xs font-medium select-none"
-      title={`Press ${index} to play`}
-    >
-      {index}
-    </div>
-  );
-}
+const DROPDOWN_ARROW_WIDTH = 12; // approximate width for the dropdown arrow
 
 /**
  * Section header component that displays section name and export button
@@ -349,10 +201,11 @@ export function SectionHeader({
   visibleRange,
   duration,
   onUpdateName,
-  onExport,
-  isExporting,
-  onToggleEnabled,
-  keyboardIndex,
+  // These props will be used in US-003 when implementing dropdown menu content
+  onExport: _onExport,
+  isExporting: _isExporting,
+  onToggleEnabled: _onToggleEnabled,
+  keyboardIndex: _keyboardIndex,
 }: SectionHeaderProps) {
   // Track whether the name is truncated (for future popover feature)
   const [isTruncated, setIsTruncated] = useState(false);
@@ -377,12 +230,10 @@ export function SectionHeader({
   const centerX = (startX + endX) / 2;
 
   // Calculate available width for the name
-  // Available space = distance between markers - buttons - gaps - padding
+  // Available space = distance between markers - dropdown arrow - gaps - padding
   const sectionWidth = endX - startX;
-  const exportButtonSpace = onExport ? BUTTON_WIDTH + GAP_WIDTH : 0;
-  const toggleButtonSpace = onToggleEnabled ? BUTTON_WIDTH + GAP_WIDTH : 0;
-  const keyboardBadgeSpace = keyboardIndex !== undefined ? BUTTON_WIDTH + GAP_WIDTH : 0;
-  const availableNameWidth = sectionWidth - exportButtonSpace - toggleButtonSpace - keyboardBadgeSpace - PADDING * 2;
+  const dropdownArrowSpace = DROPDOWN_ARROW_WIDTH + GAP_WIDTH;
+  const availableNameWidth = sectionWidth - dropdownArrowSpace - PADDING * 2;
 
   // Determine if we should show the name based on available space
   const showName = availableNameWidth >= MIN_NAME_WIDTH;
@@ -407,10 +258,6 @@ export function SectionHeader({
         transform: 'translate(-50%, -50%)',
       }}
     >
-      {/* Keyboard index badge - only show for enabled sections with keyboard shortcut */}
-      {keyboardIndex !== undefined && (
-        <KeyboardBadge index={keyboardIndex} />
-      )}
       {/* Section name - only show if enough space */}
       {showName && (
         onUpdateName ? (
@@ -436,22 +283,8 @@ export function SectionHeader({
           </div>
         )
       )}
-      {/* Export button - hidden when section is disabled */}
-      {onExport && !isDisabled && (
-        <ExportDropdown
-          sectionId={section.id}
-          onExport={onExport}
-          isExporting={isExporting}
-        />
-      )}
-      {/* Enable/disable toggle */}
-      {onToggleEnabled && (
-        <EnableToggle
-          enabled={section.enabled}
-          sectionId={section.id}
-          onToggleEnabled={onToggleEnabled}
-        />
-      )}
+      {/* Dropdown arrow for section actions menu */}
+      <SectionDropdown items={[]} />
     </div>
   );
 }
