@@ -6,7 +6,7 @@ import { FileLoaderButton } from './components/FileLoaderButton';
 import { ExportAllButton, type ExportAllFormat } from './components/ExportAllButton';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
-import { encodeWav, encodeMp3, sanitizeFilename } from './services/audioExport';
+import { encodeWav, encodeMp3, sanitizeFilename, createZipArchive } from './services/audioExport';
 import { saveAs } from 'file-saver';
 import { useZoom } from './hooks/useZoom';
 import { useMarkers } from './hooks/useMarkers';
@@ -75,10 +75,32 @@ function App() {
   }, [audioBuffer, markers, audioDuration]);
 
   // Handle export all sections as ZIP
-  const handleExportAll = useCallback((format: ExportAllFormat) => {
-    // TODO: Will be implemented in US-012 and US-013
-    console.log('Export all sections as', format);
-  }, []);
+  const handleExportAll = useCallback(async (format: ExportAllFormat) => {
+    if (!audioBuffer || markers.length === 0) return;
+
+    // Encode each section (markers are already sorted chronologically by useMarkers)
+    const files: Array<{ name: string; blob: Blob }> = [];
+
+    for (let i = 0; i < markers.length; i++) {
+      const marker = markers[i];
+      const startTime = marker.time;
+      const endTime = i + 1 < markers.length ? markers[i + 1].time : audioDuration;
+
+      // Encode based on selected format
+      const blob = format === 'wav'
+        ? encodeWav(audioBuffer, startTime, endTime)
+        : encodeMp3(audioBuffer, startTime, endTime);
+
+      const extension = format === 'wav' ? '.wav' : '.mp3';
+      const filename = `${sanitizeFilename(marker.name)}${extension}`;
+
+      files.push({ name: filename, blob });
+    }
+
+    // Create ZIP archive and download
+    const zipBlob = await createZipArchive(files);
+    saveAs(zipBlob, 'sections-export.zip');
+  }, [audioBuffer, markers, audioDuration]);
 
   // Waveform container ref and width for MarkerControlStrip
   const waveformContainerRef = useRef<HTMLDivElement>(null);
