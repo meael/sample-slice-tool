@@ -3,6 +3,7 @@ import { DropZone } from './components/DropZone';
 import { WaveformCanvas } from './components/WaveformCanvas';
 import { MarkerControlStrip, type ExportFormat } from './components/MarkerControlStrip';
 import { FileLoaderButton } from './components/FileLoaderButton';
+import { ExportAllButton, type ExportAllFormat } from './components/ExportAllButton';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
 import { encodeWav, encodeMp3, sanitizeFilename } from './services/audioExport';
@@ -72,6 +73,12 @@ function App() {
       saveAs(blob, filename);
     }
   }, [audioBuffer, markers, audioDuration]);
+
+  // Handle export all sections as ZIP
+  const handleExportAll = useCallback((format: ExportAllFormat) => {
+    // TODO: Will be implemented in US-012 and US-013
+    console.log('Export all sections as', format);
+  }, []);
 
   // Waveform container ref and width for MarkerControlStrip
   const waveformContainerRef = useRef<HTMLDivElement>(null);
@@ -155,6 +162,9 @@ function App() {
       {/* Header with load file button */}
       <div className="flex-shrink-0 p-3 flex items-center gap-3">
         <FileLoaderButton onFileSelected={handleFileLoaded} />
+        {audioBuffer && markers.length > 0 && (
+          <ExportAllButton onExportAll={handleExportAll} />
+        )}
         {isLoading && (
           <span className="text-neutral-400 text-xs">Loading...</span>
         )}
