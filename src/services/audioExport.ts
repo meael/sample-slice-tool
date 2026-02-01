@@ -197,3 +197,26 @@ function writeString(view: DataView, offset: number, str: string): void {
     view.setUint8(offset + i, str.charCodeAt(i));
   }
 }
+
+/**
+ * Sanitizes a string for use as a filename.
+ * Removes invalid characters, replaces spaces with hyphens.
+ * @param name The raw filename string
+ * @returns A sanitized filename safe for use in file systems
+ */
+export function sanitizeFilename(name: string): string {
+  // Trim whitespace first
+  let sanitized = name.trim();
+
+  // Remove invalid characters: / \ : * ? " < > |
+  sanitized = sanitized.replace(/[/\\:*?"<>|]/g, '');
+
+  // Replace spaces with hyphens
+  sanitized = sanitized.replace(/\s+/g, '-');
+
+  // Trim again in case removing characters left leading/trailing whitespace
+  sanitized = sanitized.trim();
+
+  // Return 'section' if result is empty
+  return sanitized || 'section';
+}
