@@ -14,6 +14,8 @@ import { useMarkers } from './hooks/useMarkers';
 import { usePlayback } from './hooks/usePlayback';
 import { useKeyboardControls } from './hooks/useKeyboardControls';
 import { useExportProgress } from './hooks/useExportProgress';
+import { useToast } from './hooks/useToast';
+import { Toast } from './components/Toast';
 import type { WaveformPeaks } from './types/waveform';
 
 function App() {
@@ -51,6 +53,9 @@ function App() {
   // Export progress state
   const { isExporting, currentItem, totalItems, startExport, updateProgress, completeExport } = useExportProgress();
 
+  // Toast notifications
+  const { message: toastMessage, type: toastType, visible: toastVisible, showToast, hideToast } = useToast();
+
   // Track which marker is currently being exported (for individual export spinner)
   const [exportingMarkerId, setExportingMarkerId] = useState<string | null>(null);
 
@@ -78,20 +83,25 @@ function App() {
 
     try {
       // Export based on selected format
+      let filename: string;
       if (format === 'wav') {
         const blob = encodeWav(audioBuffer, startTime, endTime);
-        const filename = `${sanitizeFilename(marker.name)}.wav`;
+        filename = `${sanitizeFilename(marker.name)}.wav`;
         saveAs(blob, filename);
-      } else if (format === 'mp3') {
+      } else {
         const blob = encodeMp3(audioBuffer, startTime, endTime);
-        const filename = `${sanitizeFilename(marker.name)}.mp3`;
+        filename = `${sanitizeFilename(marker.name)}.mp3`;
         saveAs(blob, filename);
       }
+      showToast(`Exported ${filename}`, 'success');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Export failed';
+      showToast(errorMessage, 'error');
     } finally {
       // Clear spinner
       setExportingMarkerId(null);
     }
-  }, [audioBuffer, markers, audioDuration]);
+  }, [audioBuffer, markers, audioDuration, showToast]);
 
   // Handle export all sections as ZIP
   const handleExportAll = useCallback(async (format: ExportAllFormat) => {
@@ -132,11 +142,15 @@ function App() {
       // Create ZIP archive and download
       const zipBlob = await createZipArchive(files);
       saveAs(zipBlob, 'sections-export.zip');
+      showToast(`Exported ${markers.length} sections to ZIP`, 'success');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Export failed';
+      showToast(errorMessage, 'error');
     } finally {
       // Complete progress tracking
       completeExport();
     }
-  }, [audioBuffer, markers, audioDuration, startExport, updateProgress, completeExport]);
+  }, [audioBuffer, markers, audioDuration, startExport, updateProgress, completeExport, showToast]);
 
   // Waveform container ref and width for MarkerControlStrip
   const waveformContainerRef = useRef<HTMLDivElement>(null);
@@ -280,6 +294,15 @@ function App() {
         currentItem={currentItem}
         totalItems={totalItems}
       />
+
+      {/* Toast notification */}
+      {toastVisible && (
+        <Toast
+          message={toastMessage}
+          type={toastType}
+          onDismiss={hideToast}
+        />
+      )}
     </div>
   );
 }
