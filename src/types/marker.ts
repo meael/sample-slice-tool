@@ -20,6 +20,10 @@ export interface MarkersState {
   markers: Marker[];
   /** Currently selected marker ID, or null if none selected */
   selectedMarkerId: string | null;
+  /** Whether undo is available */
+  canUndo: boolean;
+  /** Whether redo is available */
+  canRedo: boolean;
 }
 
 /**
@@ -42,4 +46,8 @@ export interface MarkersActions {
   setSelectedMarkerId: (id: string | null) => void;
   /** Clear all markers */
   clearMarkers: () => void;
+  /** Undo the last marker operation */
+  undo: () => void;
+  /** Redo the last undone operation */
+  redo: () => void;
 }

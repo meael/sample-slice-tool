@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import type { Marker, MarkersActions, MarkersState } from '../types/marker';
+import { useUndoRedo } from './useUndoRedo';
 
 /**
  * Generate a unique ID for a marker
@@ -22,7 +23,14 @@ function sortMarkersByTime(markers: Marker[]): Marker[] {
  * and support for a selected marker state.
  */
 export function useMarkers(): MarkersState & MarkersActions {
-  const [markers, setMarkers] = useState<Marker[]>([]);
+  const {
+    state: markers,
+    setState: setMarkers,
+    canUndo,
+    canRedo,
+    undo,
+    redo,
+  } = useUndoRedo<Marker[]>([]);
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 
   const addMarker = useCallback((time: number): Marker => {
@@ -43,7 +51,7 @@ export function useMarkers(): MarkersState & MarkersActions {
     setSelectedMarkerId(newMarker!.id);
 
     return newMarker!;
-  }, []);
+  }, [setMarkers]);
 
   const updateMarker = useCallback((id: string, time: number): void => {
     setMarkers((prev) => {
@@ -52,7 +60,7 @@ export function useMarkers(): MarkersState & MarkersActions {
       );
       return sortMarkersByTime(updated);
     });
-  }, []);
+  }, [setMarkers]);
 
   const updateMarkerName = useCallback((id: string, name: string): void => {
     setMarkers((prev) =>
@@ -60,7 +68,7 @@ export function useMarkers(): MarkersState & MarkersActions {
         marker.id === id ? { ...marker, name } : marker
       )
     );
-  }, []);
+  }, [setMarkers]);
 
   const updateMarkerEnabled = useCallback((id: string, enabled: boolean): void => {
     setMarkers((prev) =>
@@ -68,12 +76,12 @@ export function useMarkers(): MarkersState & MarkersActions {
         marker.id === id ? { ...marker, enabled } : marker
       )
     );
-  }, []);
+  }, [setMarkers]);
 
   const deleteMarker = useCallback((id: string): void => {
     setMarkers((prev) => prev.filter((marker) => marker.id !== id));
     setSelectedMarkerId((prev) => (prev === id ? null : prev));
-  }, []);
+  }, [setMarkers]);
 
   const getMarkers = useCallback((): Marker[] => {
     return markers;
@@ -82,11 +90,13 @@ export function useMarkers(): MarkersState & MarkersActions {
   const clearMarkers = useCallback((): void => {
     setMarkers([]);
     setSelectedMarkerId(null);
-  }, []);
+  }, [setMarkers]);
 
   return {
     markers,
     selectedMarkerId,
+    canUndo,
+    canRedo,
     addMarker,
     updateMarker,
     updateMarkerName,
@@ -95,5 +105,7 @@ export function useMarkers(): MarkersState & MarkersActions {
     getMarkers,
     setSelectedMarkerId,
     clearMarkers,
+    undo,
+    redo,
   };
 }
