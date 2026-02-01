@@ -59,27 +59,19 @@ function App() {
   // Toast notifications
   const { message: toastMessage, type: toastType, visible: toastVisible, showToast, hideToast } = useToast();
 
-  // Track which marker is currently being exported (for individual export spinner)
-  const [exportingMarkerId, setExportingMarkerId] = useState<string | null>(null);
+  // Track which section is currently being exported (for individual export spinner)
+  const [exportingSectionId, setExportingSectionId] = useState<string | null>(null);
 
-  // Handle export of individual marker sections
-  const handleExportMarker = useCallback(async (markerId: string, format: ExportFormat) => {
+  // Handle export of individual sections
+  const handleExportSection = useCallback(async (sectionId: string, format: ExportFormat) => {
     if (!audioBuffer) return;
 
-    // Find the marker and its index
-    const markerIndex = markers.findIndex(m => m.id === markerId);
-    if (markerIndex === -1) return;
-
-    const marker = markers[markerIndex];
-
-    // Calculate section boundaries: this marker's time to next marker's time (or end)
-    const startTime = marker.time;
-    const endTime = markerIndex + 1 < markers.length
-      ? markers[markerIndex + 1].time
-      : audioDuration;
+    // Find the section
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
 
     // Show spinner on export button
-    setExportingMarkerId(markerId);
+    setExportingSectionId(sectionId);
 
     // Use setTimeout to allow UI to update before encoding (which can be synchronous and blocking)
     await new Promise(resolve => setTimeout(resolve, 0));
@@ -88,12 +80,12 @@ function App() {
       // Export based on selected format
       let filename: string;
       if (format === 'wav') {
-        const blob = encodeWav(audioBuffer, startTime, endTime);
-        filename = `${sanitizeFilename(marker.name)}.wav`;
+        const blob = encodeWav(audioBuffer, section.startTime, section.endTime);
+        filename = `${sanitizeFilename(section.name)}.wav`;
         saveAs(blob, filename);
       } else {
-        const blob = encodeMp3(audioBuffer, startTime, endTime);
-        filename = `${sanitizeFilename(marker.name)}.mp3`;
+        const blob = encodeMp3(audioBuffer, section.startTime, section.endTime);
+        filename = `${sanitizeFilename(section.name)}.mp3`;
         saveAs(blob, filename);
       }
       showToast(`Exported ${filename}`, 'success');
@@ -102,9 +94,17 @@ function App() {
       showToast(errorMessage, 'error');
     } finally {
       // Clear spinner
-      setExportingMarkerId(null);
+      setExportingSectionId(null);
     }
-  }, [audioBuffer, markers, audioDuration, showToast]);
+  }, [audioBuffer, sections, showToast]);
+
+  // Handle section name update (updates the start marker's name)
+  const handleUpdateSectionName = useCallback((sectionId: string, name: string) => {
+    // Find the section and update its start marker's name
+    const section = sections.find(s => s.id === sectionId);
+    if (!section) return;
+    updateMarkerName(section.startMarker.id, name);
+  }, [sections, updateMarkerName]);
 
   // Handle export all sections as ZIP
   const handleExportAll = useCallback(async (format: ExportAllFormat) => {
@@ -251,13 +251,14 @@ function App() {
           {/* Marker control strip */}
           <MarkerControlStrip
             markers={markers}
+            sections={sections}
             containerWidth={containerWidth}
             visibleRange={visibleRange}
             duration={audioDuration}
             onDeleteMarker={deleteMarker}
-            onUpdateMarkerName={updateMarkerName}
-            onExportMarker={handleExportMarker}
-            exportingMarkerId={exportingMarkerId}
+            onUpdateSectionName={handleUpdateSectionName}
+            onExportSection={handleExportSection}
+            exportingSectionId={exportingSectionId}
           />
           {/* Waveform canvas */}
           <WaveformCanvas
