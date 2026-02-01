@@ -1,0 +1,9 @@
+# Ralph Progress Log
+Started: Sun Feb  1 2026
+
+## Codebase Patterns
+- Vite config is in `vite.config.ts`
+- This is a Vite + React + TypeScript project
+- Use `process.env.NODE_ENV` or Vite's `mode` to detect production builds
+
+---

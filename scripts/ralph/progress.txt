@@ -1,58 +1,53 @@
 # Ralph Progress Log
-Started: Sun Feb  1 21:10:08 EET 2026
+Started: Sun Feb  1 21:46:44 EET 2026
 ---
 
 ## Codebase Patterns
-- Marker controls are rendered in `MarkerControlStrip.tsx` above the waveform
-- Sections are derived from consecutive markers; a section's enabled state comes from `startMarker.enabled`
-- Use `markerKeyboardIndexMap` to get keyboard index (1-9) for markers starting enabled sections
-- Use `markerSectionMap` to check if a marker starts a section and whether it's enabled/disabled
+- Vite config uses function form `defineConfig(({ mode }) => ({...}))` to access build mode for conditional configuration
+- GitHub Pages deployment requires base path matching repository name
+- GitHub Actions workflows go in `.github/workflows/` directory
 
 ---
 
-## 2026-02-01 21:15 - US-001
-- Implemented showing keyboard label (1-9) as default for enabled sections
-- Close icon is now hidden for markers starting enabled sections
-- Added `getMarkerSectionMap()` helper to determine if a marker starts an enabled/disabled section
-- Files changed: `src/components/MarkerControlStrip.tsx`
+## 2026-02-01 21:47 - US-001
+- Implemented: Configure Vite base path for GitHub Pages
+- Files changed: vite.config.ts
+- Changes:
+  - Updated defineConfig to use function form to access `mode`
+  - Set `base: '/sample-slice-tool/'` for production builds
+  - Development mode keeps base path as `/` for local development
 - **Learnings for future iterations:**
-  - The keyboard label was previously positioned to the left of the close icon; now it's centered above the marker
-  - Markers not starting any section (e.g., the last marker) still show the close icon
-  - Browser testing verified: labels 1, 2, 3 visible for Section 1, 2, 3; × icon visible for end marker
+  - Vite's defineConfig can take a function that receives `{ mode, command }` for conditional config
+  - GitHub Pages serves from `/<repo-name>/` subdirectory, so assets need that base path
+  - Build verification: check dist/index.html for correct asset prefixes
 ---
 
-## 2026-02-01 21:45 - US-002
-- Implemented hover-to-reveal close icon behavior for enabled sections
-- Added `hoveredControlId` state to track which control area is being hovered
-- Both keyboard label and close icon are rendered with opacity transitions (150ms)
-- Close icon uses `hover:bg-red-600` for danger color on hover
-- Used `pointerEvents: 'none'` when close icon is hidden to prevent accidental clicks
-- Files changed: `src/components/MarkerControlStrip.tsx`
+## 2026-02-01 21:50 - US-002
+- Implemented: Add GitHub Actions workflow for deployment
+- Files changed: .github/workflows/deploy.yml (created)
+- Changes:
+  - Created workflow that triggers on push to main branch
+  - Uses Node.js 20 with npm caching for faster builds
+  - Runs npm ci and npm run build
+  - Uses GitHub Pages actions: configure-pages, upload-pages-artifact, deploy-pages
+  - Set proper permissions: pages: write, id-token: write, contents: read
+  - Added concurrency settings to prevent overlapping deployments
 - **Learnings for future iterations:**
-  - Use opacity transitions with `pointerEvents` toggle for smooth show/hide without layout shift
-  - The keyboard label element itself has no click handler, only the close icon is clickable
-  - Browser testing verified: label swaps to red × on hover, fades back on mouseout, click deletes marker
+  - GitHub Pages deployment workflows need two jobs: build and deploy (deploy depends on build)
+  - The upload-pages-artifact action needs `path` pointing to the build output directory (./dist for Vite)
+  - Required permissions: `pages: write`, `id-token: write` for OIDC token, `contents: read` for checkout
+  - Use `cancel-in-progress: false` for deployment concurrency to prevent partial deployments
 ---
 
 ## 2026-02-01 22:15 - US-003
-- Implemented `cursor: not-allowed` on the control container for disabled sections
-- Added `isDisabledSection` variable to detect markers starting disabled sections
-- Close icon gets explicit `cursor: pointer` style to override parent's `not-allowed`
-- Files changed: `src/components/MarkerControlStrip.tsx`
+- Implemented: Create main branch from current state
+- Files changed: None (git branch operation only)
+- Changes:
+  - Updated main branch to point to current HEAD using `git branch -f main HEAD`
+  - Main branch now contains all features including the GitHub Pages deployment commits
+  - Verified with `git branch --list main` that branch exists
 - **Learnings for future iterations:**
-  - Disabled section detection: `section !== undefined && !section.enabled`
-  - Parent cursor + child cursor override pattern: parent sets `not-allowed`, child sets `pointer`
-  - Browser testing verified: disabled section shows × (not keyboard label), cursor is not-allowed on container but pointer on close icon, red hover effect works, clicking deletes marker
----
-
-## 2026-02-01 22:45 - US-004
-- Added explicit min-w/min-h dimensions to control container for stable hover area
-- Added `pointerEvents: 'none'` to keyboard label to prevent hover state flickering
-- Adjusted top margin from 5px to 3px for better visual alignment
-- Files changed: `src/components/MarkerControlStrip.tsx`
-- **Learnings for future iterations:**
-  - Use min-w/min-h on parent container to create stable hover target area
-  - Apply `pointerEvents: 'none'` to child elements that shouldn't affect hover state
-  - MarkerControlStrip and WaveformCanvas are vertically stacked, so no drag interference is possible
-  - Browser testing verified: rapid mouse movement shows no flickering, transitions are smooth
+  - Use `git branch -f <branch> <commit>` to force-update an existing branch to a new commit
+  - Branch operations don't create commits - they just move the branch reference pointer
+  - For deployment workflows that trigger on push to main, ensure main branch is up to date before pushing
 ---
