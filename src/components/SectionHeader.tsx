@@ -30,18 +30,22 @@ interface EditableNameProps {
   onUpdateName: (sectionId: string, name: string) => void;
   /** Maximum width available for the name in pixels */
   maxWidth: number;
+  /** Whether the name is currently truncated (for popover vs inline editing) */
+  isTruncated: boolean;
   /** Callback to report whether the name is truncated */
   onTruncatedChange?: (isTruncated: boolean) => void;
 }
 
 /**
  * Inline editable section name component
+ * When truncated, opens a popover for editing instead of inline input
  */
-function EditableName({ name, sectionId, sectionIndex, onUpdateName, maxWidth, onTruncatedChange }: EditableNameProps) {
+function EditableName({ name, sectionId, sectionIndex, onUpdateName, maxWidth, isTruncated, onTruncatedChange }: EditableNameProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editValue, setEditValue] = useState(name);
   const inputRef = useRef<HTMLInputElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   // Focus and select text when entering edit mode
   useEffect(() => {
@@ -54,8 +58,8 @@ function EditableName({ name, sectionId, sectionIndex, onUpdateName, maxWidth, o
   // Detect truncation by comparing scrollWidth with clientWidth
   useEffect(() => {
     if (!isEditing && textRef.current && onTruncatedChange) {
-      const isTruncated = textRef.current.scrollWidth > textRef.current.clientWidth;
-      onTruncatedChange(isTruncated);
+      const truncated = textRef.current.scrollWidth > textRef.current.clientWidth;
+      onTruncatedChange(truncated);
     }
   }, [name, maxWidth, isEditing, onTruncatedChange]);
 
@@ -87,9 +91,56 @@ function EditableName({ name, sectionId, sectionIndex, onUpdateName, maxWidth, o
     setIsEditing(true);
   }, [name]);
 
-  // Constrain maxWidth to a reasonable input width
+  // Constrain maxWidth to a reasonable input width for inline editing
   const inputWidth = Math.min(Math.max(maxWidth, 60), 150);
 
+  // For truncated names, show a popover instead of inline editing
+  if (isEditing && isTruncated) {
+    return (
+      <div className="relative">
+        {/* The truncated text (still visible behind popover) */}
+        <div
+          ref={textRef}
+          className="text-neutral-300 select-none truncate"
+          style={{
+            fontSize: 12,
+            maxWidth: maxWidth,
+          }}
+        >
+          {name}
+        </div>
+        {/* Floating popover positioned below the name */}
+        <div
+          ref={popoverRef}
+          className="absolute left-0 top-full mt-1 p-2 rounded shadow-lg z-50"
+          style={{
+            backgroundColor: '#1f1f1f',
+            minWidth: 150,
+            maxWidth: 250,
+          }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          <input
+            ref={inputRef}
+            type="text"
+            value={editValue}
+            onChange={(e) => setEditValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onBlur={handleSave}
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            className="w-full bg-neutral-700 text-neutral-100 rounded px-2 py-1 outline-none focus:ring-1 focus:ring-cyan-500"
+            style={{
+              fontSize: 12,
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Non-truncated inline editing
   if (isEditing) {
     return (
       <input
@@ -277,9 +328,6 @@ export function SectionHeader({
     setIsTruncated(truncated);
   }, []);
 
-  // Log truncation state for debugging (will be used by US-009 for popover)
-  void isTruncated;
-
   return (
     <div
       className="absolute flex items-center gap-1"
@@ -298,6 +346,7 @@ export function SectionHeader({
             sectionIndex={sectionIndex}
             onUpdateName={onUpdateName}
             maxWidth={nameMaxWidth}
+            isTruncated={isTruncated}
             onTruncatedChange={handleTruncatedChange}
           />
         ) : (
