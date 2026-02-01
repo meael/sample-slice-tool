@@ -57,20 +57,33 @@ export function MarkerControlStrip({
         borderBottom: '1px solid #333',
       }}
     >
-      {/* Marker controls will be rendered here in future stories */}
-      {markers.map((marker) => {
+      {markers.map((marker, index) => {
         if (!isMarkerVisible(marker.time)) return null;
         const pixelX = getMarkerPixelX(marker.time);
+        // Number badge: 1-9 for first 9 markers, null for the rest
+        const badgeNumber = index < 9 ? index + 1 : null;
         return (
           <div
             key={`marker-control-${marker.id}`}
-            className="absolute"
+            className="absolute flex items-center gap-1"
             style={{
               left: pixelX,
               top: '50%',
               transform: 'translate(-50%, -50%)',
             }}
           >
+            {/* Number badge */}
+            {badgeNumber !== null && (
+              <div
+                className="flex items-center justify-center h-4 px-1 rounded bg-neutral-800 text-neutral-300 text-xs select-none"
+                style={{
+                  fontFamily: 'monospace',
+                  minWidth: 16,
+                }}
+              >
+                {badgeNumber}
+              </div>
+            )}
             {/* Close icon */}
             <div
               className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-colors hover:bg-neutral-600 hover:text-white"
