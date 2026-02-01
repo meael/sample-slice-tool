@@ -1,10 +1,14 @@
 import { useCallback, useEffect } from 'react';
 import type { Marker } from '../types/marker';
+import type { PlaybackState } from './usePlayback';
 
 export interface UseKeyboardControlsOptions {
   markers: Marker[];
   duration: number;
+  playbackState: PlaybackState;
   onPlaySegment: (startTime: number, endTime: number) => void;
+  onPause: () => void;
+  onResume: () => void;
 }
 
 /**
@@ -21,20 +25,39 @@ function isInputElement(target: EventTarget | null): boolean {
  *
  * - Keys 1-9 play the corresponding marker segment
  * - Key N plays segment from marker N-1 to marker N (or end of audio)
+ * - Spacebar pauses/resumes playback
  * - Ignores key events when input/textarea is focused
  */
 export function useKeyboardControls({
   markers,
   duration,
+  playbackState,
   onPlaySegment,
+  onPause,
+  onResume,
 }: UseKeyboardControlsOptions): void {
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
       // Ignore if focus is in an input element
       if (isInputElement(event.target)) return;
 
-      // Check for number keys 1-9
       const key = event.key;
+
+      // Spacebar: pause/resume
+      if (key === ' ') {
+        // Prevent default scrolling behavior
+        event.preventDefault();
+
+        if (playbackState === 'playing') {
+          onPause();
+        } else if (playbackState === 'paused') {
+          onResume();
+        }
+        // Ignore when idle (nothing playing)
+        return;
+      }
+
+      // Check for number keys 1-9
       if (key >= '1' && key <= '9') {
         const keyNumber = parseInt(key, 10); // 1-9
         const markerIndex = keyNumber - 1; // 0-8
@@ -60,7 +83,7 @@ export function useKeyboardControls({
         onPlaySegment(startTime, endTime);
       }
     },
-    [markers, duration, onPlaySegment]
+    [markers, duration, playbackState, onPlaySegment, onPause, onResume]
   );
 
   useEffect(() => {

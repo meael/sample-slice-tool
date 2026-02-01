@@ -30,13 +30,16 @@ function App() {
   const { markers, selectedMarkerId, addMarker, updateMarker, deleteMarker, setSelectedMarkerId, clearMarkers } = useMarkers();
 
   // Audio playback
-  const { playSegment } = usePlayback({ audioBuffer });
+  const { playSegment, pause, resume, state: playbackState } = usePlayback({ audioBuffer });
 
-  // Keyboard controls for playback (1-9 keys)
+  // Keyboard controls for playback (1-9 keys, spacebar pause/resume)
   useKeyboardControls({
     markers,
     duration: audioDuration,
+    playbackState,
     onPlaySegment: playSegment,
+    onPause: pause,
+    onResume: resume,
   });
 
   // Waveform container ref and width for MarkerControlStrip
