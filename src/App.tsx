@@ -45,8 +45,7 @@ function App() {
 
   // Keyboard controls for playback (1-9 keys, spacebar pause/resume, Escape stop)
   useKeyboardControls({
-    markers,
-    duration: audioDuration,
+    sections,
     playbackState,
     onPlaySegment: playSegment,
     onPause: pause,
