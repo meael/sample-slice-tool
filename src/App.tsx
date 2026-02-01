@@ -108,36 +108,34 @@ function App() {
 
   // Handle export all sections as ZIP
   const handleExportAll = useCallback(async (format: ExportAllFormat) => {
-    if (!audioBuffer || markers.length === 0) return;
+    if (!audioBuffer || sections.length === 0) return;
 
     // Start progress tracking
-    startExport(markers.length);
+    startExport(sections.length);
 
     // Allow UI to update before starting encoding
     await new Promise(resolve => setTimeout(resolve, 0));
 
     try {
-      // Encode each section (markers are already sorted chronologically by useMarkers)
+      // Encode each section (sections are derived from sorted markers)
       const files: Array<{ name: string; blob: Blob }> = [];
 
-      for (let i = 0; i < markers.length; i++) {
-        const marker = markers[i];
-        const startTime = marker.time;
-        const endTime = i + 1 < markers.length ? markers[i + 1].time : audioDuration;
+      for (let i = 0; i < sections.length; i++) {
+        const section = sections[i];
 
         // Update progress before encoding each item
-        updateProgress(i + 1, Math.round(((i + 1) / markers.length) * 100));
+        updateProgress(i + 1, Math.round(((i + 1) / sections.length) * 100));
 
         // Allow UI to update
         await new Promise(resolve => setTimeout(resolve, 0));
 
-        // Encode based on selected format
+        // Encode based on selected format using section boundaries
         const blob = format === 'wav'
-          ? encodeWav(audioBuffer, startTime, endTime)
-          : encodeMp3(audioBuffer, startTime, endTime);
+          ? encodeWav(audioBuffer, section.startTime, section.endTime)
+          : encodeMp3(audioBuffer, section.startTime, section.endTime);
 
         const extension = format === 'wav' ? '.wav' : '.mp3';
-        const filename = `${sanitizeFilename(marker.name)}${extension}`;
+        const filename = `${sanitizeFilename(section.name)}${extension}`;
 
         files.push({ name: filename, blob });
       }
@@ -145,7 +143,7 @@ function App() {
       // Create ZIP archive and download
       const zipBlob = await createZipArchive(files);
       saveAs(zipBlob, 'sections-export.zip');
-      showToast(`Exported ${markers.length} sections to ZIP`, 'success');
+      showToast(`Exported ${sections.length} sections to ZIP`, 'success');
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Export failed';
       showToast(errorMessage, 'error');
@@ -153,7 +151,7 @@ function App() {
       // Complete progress tracking
       completeExport();
     }
-  }, [audioBuffer, markers, audioDuration, startExport, updateProgress, completeExport, showToast]);
+  }, [audioBuffer, sections, startExport, updateProgress, completeExport, showToast]);
 
   // Waveform container ref and width for MarkerControlStrip
   const waveformContainerRef = useRef<HTMLDivElement>(null);
@@ -237,7 +235,7 @@ function App() {
       {/* Header with load file button */}
       <div className="flex-shrink-0 p-3 flex items-center gap-3">
         <FileLoaderButton onFileSelected={handleFileLoaded} />
-        {audioBuffer && markers.length > 0 && (
+        {audioBuffer && sections.length > 0 && (
           <ExportAllButton onExportAll={handleExportAll} />
         )}
         {isLoading && (
