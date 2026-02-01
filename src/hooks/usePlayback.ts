@@ -36,6 +36,9 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
   const sourceNodeRef = useRef<AudioBufferSourceNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
 
+  // Fade-out duration in seconds
+  const FADE_DURATION = 0.2; // 200ms
+
   // Playback tracking refs
   const segmentStartTimeRef = useRef(0);
   const segmentEndTimeRef = useRef(0);
@@ -76,6 +79,43 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
       sourceNodeRef.current.disconnect();
       sourceNodeRef.current = null;
     }
+  }, []);
+
+  /**
+   * Fade out and clean up the current playback (for smooth transitions)
+   * Returns immediately - the fade happens asynchronously
+   */
+  const fadeOutCurrentPlayback = useCallback(() => {
+    const audioContext = audioContextRef.current;
+    const sourceNode = sourceNodeRef.current;
+    const gainNode = gainNodeRef.current;
+
+    if (!audioContext || !sourceNode || !gainNode) return;
+
+    // Capture references for the closure
+    const fadingSource = sourceNode;
+    const fadingGain = gainNode;
+
+    // Clear our refs immediately so new playback can start fresh
+    sourceNodeRef.current = null;
+    gainNodeRef.current = null;
+
+    // Schedule the fade-out using linearRampToValueAtTime
+    const now = audioContext.currentTime;
+    fadingGain.gain.cancelScheduledValues(now);
+    fadingGain.gain.setValueAtTime(fadingGain.gain.value, now);
+    fadingGain.gain.linearRampToValueAtTime(0, now + FADE_DURATION);
+
+    // Schedule cleanup after fade completes
+    setTimeout(() => {
+      try {
+        fadingSource.stop();
+      } catch {
+        // Ignore if already stopped
+      }
+      fadingSource.disconnect();
+      fadingGain.disconnect();
+    }, FADE_DURATION * 1000 + 50); // Add small buffer for safety
   }, []);
 
   /**
@@ -159,25 +199,30 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
         audioContext.resume();
       }
 
-      // Clean up any existing playback
-      cleanupSourceNode();
+      // If currently playing, fade out the old audio (smooth transition)
+      // Otherwise, just clean up any stale nodes
+      if (isPlayingRef.current && sourceNodeRef.current) {
+        fadeOutCurrentPlayback();
+      } else {
+        cleanupSourceNode();
+      }
       cancelTimeUpdate();
 
       // Create new source node
       const sourceNode = audioContext.createBufferSource();
       sourceNode.buffer = audioBuffer;
 
-      // Create gain node for volume control (used for fades in US-006)
-      if (!gainNodeRef.current) {
-        gainNodeRef.current = audioContext.createGain();
-        gainNodeRef.current.connect(audioContext.destination);
-      }
+      // Always create a new gain node for each playback
+      // This allows concurrent fade-out of old audio while new audio plays
+      const gainNode = audioContext.createGain();
+      gainNode.connect(audioContext.destination);
+      gainNodeRef.current = gainNode;
 
-      // Reset gain to full volume
-      gainNodeRef.current.gain.setValueAtTime(1, audioContext.currentTime);
+      // Start at full volume
+      gainNode.gain.setValueAtTime(1, audioContext.currentTime);
 
       // Connect source to gain
-      sourceNode.connect(gainNodeRef.current);
+      sourceNode.connect(gainNode);
 
       // Store segment boundaries
       segmentStartTimeRef.current = startTime;
@@ -208,7 +253,7 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
       setCurrentTime(startTime);
       startTimeUpdate();
     },
-    [audioBuffer, getAudioContext, cleanupSourceNode, cancelTimeUpdate, startTimeUpdate, stopInternal]
+    [audioBuffer, getAudioContext, cleanupSourceNode, cancelTimeUpdate, startTimeUpdate, stopInternal, fadeOutCurrentPlayback]
   );
 
   /**
@@ -261,13 +306,13 @@ export function usePlayback({ audioBuffer }: UsePlaybackOptions): UsePlaybackRet
     const sourceNode = audioContext.createBufferSource();
     sourceNode.buffer = audioBuffer;
 
-    if (!gainNodeRef.current) {
-      gainNodeRef.current = audioContext.createGain();
-      gainNodeRef.current.connect(audioContext.destination);
-    }
+    // Create new gain node for this playback
+    const gainNode = audioContext.createGain();
+    gainNode.connect(audioContext.destination);
+    gainNodeRef.current = gainNode;
 
-    gainNodeRef.current.gain.setValueAtTime(1, audioContext.currentTime);
-    sourceNode.connect(gainNodeRef.current);
+    gainNode.gain.setValueAtTime(1, audioContext.currentTime);
+    sourceNode.connect(gainNode);
 
     // Calculate remaining duration
     const remainingDuration = segmentEndTimeRef.current - pausedAtRef.current;
