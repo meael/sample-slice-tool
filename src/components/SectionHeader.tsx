@@ -372,9 +372,12 @@ export function SectionHeader({
     setIsTruncated(truncated);
   }, []);
 
+  // Determine if section is disabled for styling
+  const isDisabled = !section.enabled;
+
   return (
     <div
-      className="absolute flex items-center gap-1"
+      className={`absolute flex items-center gap-1 transition-opacity ${isDisabled ? 'opacity-50' : ''}`}
       style={{
         left: centerX,
         top: '50%',
@@ -406,8 +409,8 @@ export function SectionHeader({
           </div>
         )
       )}
-      {/* Export button */}
-      {onExport && (
+      {/* Export button - hidden when section is disabled */}
+      {onExport && !isDisabled && (
         <ExportDropdown
           sectionId={section.id}
           onExport={onExport}

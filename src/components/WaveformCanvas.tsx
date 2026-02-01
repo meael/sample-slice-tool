@@ -176,10 +176,11 @@ export function WaveformCanvas({
     const grayValue = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
     const grayscaleColor = `rgb(${grayValue}, ${grayValue}, ${grayValue})`;
 
-    // Determine if a time position is within an active section
+    // Determine if a time position is within an active (enabled) section
     const isInActiveSection = (time: number): boolean => {
       if (sections.length === 0) return true; // No sections = all active (backwards compatibility)
-      return sections.some(section => time >= section.startTime && time <= section.endTime);
+      // Check if time is in an enabled section
+      return sections.some(section => section.enabled && time >= section.startTime && time <= section.endTime);
     };
 
     // Convert pixel X position to time
