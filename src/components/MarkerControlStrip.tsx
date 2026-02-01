@@ -3,6 +3,8 @@ import type { Marker } from '../types/marker';
 import type { VisibleRange } from '../types/zoom';
 import type { PlaybackState } from '../hooks/usePlayback';
 
+export type ExportFormat = 'wav' | 'mp3';
+
 export interface MarkerControlStripProps {
   /** Array of markers to display controls for */
   markers: Marker[];
@@ -16,6 +18,8 @@ export interface MarkerControlStripProps {
   onDeleteMarker?: (markerId: string) => void;
   /** Callback when user updates a marker's name */
   onUpdateMarkerName?: (markerId: string, name: string) => void;
+  /** Callback when user clicks to export a marker section */
+  onExportMarker?: (markerId: string, format: ExportFormat) => void;
   /** Current playback state */
   playbackState?: PlaybackState;
   /** Start time of the currently playing segment */
@@ -112,6 +116,87 @@ function EditableName({ name, markerId, markerIndex, onUpdateName }: EditableNam
   );
 }
 
+interface ExportDropdownProps {
+  markerId: string;
+  onExport: (markerId: string, format: ExportFormat) => void;
+}
+
+/**
+ * Export dropdown component with WAV and MP3 options
+ */
+function ExportDropdown({ markerId, onExport }: ExportDropdownProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  const handleExport = useCallback((format: ExportFormat) => {
+    onExport(markerId, format);
+    setIsOpen(false);
+  }, [markerId, onExport]);
+
+  return (
+    <div ref={dropdownRef} className="relative">
+      {/* Export button (download icon) */}
+      <div
+        className="flex items-center justify-center w-4 h-4 rounded bg-neutral-700 text-neutral-300 text-xs select-none cursor-pointer transition-opacity hover:opacity-80"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen(!isOpen);
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+        title="Export section"
+      >
+        ↓
+      </div>
+      {/* Dropdown menu */}
+      {isOpen && (
+        <div
+          className="absolute top-full left-1/2 mt-1 py-1 rounded shadow-lg z-50"
+          style={{
+            transform: 'translateX(-50%)',
+            backgroundColor: '#1f1f1f',
+            minWidth: 60,
+          }}
+        >
+          <div
+            className="px-3 py-1 text-neutral-200 text-xs cursor-pointer hover:bg-neutral-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExport('wav');
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            WAV
+          </div>
+          <div
+            className="px-3 py-1 text-neutral-200 text-xs cursor-pointer hover:bg-neutral-700"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleExport('mp3');
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            MP3
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * Control strip component that renders above the waveform
  * Displays marker controls (close icons, number badges) without obscuring the waveform
@@ -123,6 +208,7 @@ export function MarkerControlStrip({
   duration,
   onDeleteMarker,
   onUpdateMarkerName,
+  onExportMarker,
   playbackState,
   playbackSegmentStart,
   playbackSegmentEnd,
@@ -231,6 +317,13 @@ export function MarkerControlStrip({
               >
                 {badgeNumber}
               </div>
+            )}
+            {/* Export button */}
+            {onExportMarker && (
+              <ExportDropdown
+                markerId={marker.id}
+                onExport={onExportMarker}
+              />
             )}
             {/* Close icon */}
             <div
