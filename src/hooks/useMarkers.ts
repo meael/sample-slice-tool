@@ -34,6 +34,7 @@ export function useMarkers(): MarkersState & MarkersActions {
         id: generateMarkerId(),
         time,
         name: `Section ${sectionNumber}`,
+        enabled: true,
       };
       return sortMarkersByTime([...prev, newMarker]);
     });
@@ -61,6 +62,14 @@ export function useMarkers(): MarkersState & MarkersActions {
     );
   }, []);
 
+  const updateMarkerEnabled = useCallback((id: string, enabled: boolean): void => {
+    setMarkers((prev) =>
+      prev.map((marker) =>
+        marker.id === id ? { ...marker, enabled } : marker
+      )
+    );
+  }, []);
+
   const deleteMarker = useCallback((id: string): void => {
     setMarkers((prev) => prev.filter((marker) => marker.id !== id));
     setSelectedMarkerId((prev) => (prev === id ? null : prev));
@@ -81,6 +90,7 @@ export function useMarkers(): MarkersState & MarkersActions {
     addMarker,
     updateMarker,
     updateMarkerName,
+    updateMarkerEnabled,
     deleteMarker,
     getMarkers,
     setSelectedMarkerId,

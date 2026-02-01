@@ -8,6 +8,8 @@ export interface Marker {
   time: number;
   /** Display name for the section */
   name: string;
+  /** Whether the section starting at this marker is enabled (default: true) */
+  enabled?: boolean;
 }
 
 /**
@@ -30,6 +32,8 @@ export interface MarkersActions {
   updateMarker: (id: string, time: number) => void;
   /** Update an existing marker's name */
   updateMarkerName: (id: string, name: string) => void;
+  /** Update an existing marker's enabled state */
+  updateMarkerEnabled: (id: string, enabled: boolean) => void;
   /** Delete a marker by ID */
   deleteMarker: (id: string) => void;
   /** Get all markers */
