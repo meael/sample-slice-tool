@@ -27,12 +27,14 @@ export function useMarkers(): MarkersState & MarkersActions {
     state: markers,
     setState: setMarkers,
     setStateWithoutHistory: setMarkersWithoutHistory,
+    setStateWithExplicitHistory: setMarkersWithExplicitHistory,
     canUndo,
     canRedo,
     undo,
     redo,
     clearHistory,
   } = useUndoRedo<Marker[]>([]);
+
   const [selectedMarkerId, setSelectedMarkerId] = useState<string | null>(null);
 
   const addMarker = useCallback((time: number): Marker => {
@@ -72,6 +74,22 @@ export function useMarkers(): MarkersState & MarkersActions {
       return sortMarkersByTime(updated);
     });
   }, [setMarkersWithoutHistory]);
+
+  const updateMarkerAtomic = useCallback((id: string, fromTime: number, toTime: number): void => {
+    // Create explicit "from" and "to" states for atomic undo
+    // This allows a drag operation to be undone in a single step
+    const fromState = sortMarkersByTime(
+      markers.map((marker) =>
+        marker.id === id ? { ...marker, time: fromTime } : marker
+      )
+    );
+    const toState = sortMarkersByTime(
+      markers.map((marker) =>
+        marker.id === id ? { ...marker, time: toTime } : marker
+      )
+    );
+    setMarkersWithExplicitHistory(fromState, toState);
+  }, [setMarkersWithExplicitHistory, markers]);
 
   const updateMarkerName = useCallback((id: string, name: string): void => {
     setMarkers((prev) =>
@@ -117,6 +135,7 @@ export function useMarkers(): MarkersState & MarkersActions {
     addMarker,
     updateMarker,
     updateMarkerSilent,
+    updateMarkerAtomic,
     updateMarkerName,
     updateMarkerEnabled,
     deleteMarker,

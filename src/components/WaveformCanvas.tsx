@@ -40,8 +40,12 @@ export interface WaveformCanvasProps {
   selectedMarkerColor?: string;
   /** Callback when user clicks to select a marker (or deselect with null) */
   onSelectMarker?: (markerId: string | null) => void;
-  /** Callback when user drags a marker to update its position */
+  /** Callback when user drags a marker to update its position (creates history entry) */
   onUpdateMarker?: (markerId: string, time: number) => void;
+  /** Callback for silent marker updates during drag (no history entry) */
+  onUpdateMarkerSilent?: (markerId: string, time: number) => void;
+  /** Callback for atomic marker update with explicit from/to for proper undo */
+  onUpdateMarkerAtomic?: (markerId: string, fromTime: number, toTime: number) => void;
   /** Callback when user deletes the selected marker */
   onDeleteMarker?: (markerId: string) => void;
   /** Current playback state */
@@ -76,6 +80,8 @@ export function WaveformCanvas({
   selectedMarkerColor = '#fbbf24', // amber-400 (used for drag active state)
   // onSelectMarker not used - no persistent selection
   onUpdateMarker,
+  onUpdateMarkerSilent,
+  onUpdateMarkerAtomic,
   onDeleteMarker,
   playbackState = 'idle',
   playbackCurrentTime = 0,
@@ -97,6 +103,8 @@ export function WaveformCanvas({
   // Marker drag state
   const isDraggingMarkerRef = useRef(false);
   const draggingMarkerIdRef = useRef<string | null>(null);
+  // Track initial marker time at drag start for atomic undo
+  const dragStartMarkerTimeRef = useRef<number | null>(null);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
@@ -472,9 +480,14 @@ export function WaveformCanvas({
       if (clickedMarkerId && onUpdateMarker) {
         // Start dragging the clicked marker (no selection required)
         isDraggingMarkerRef.current = true;
+        isDraggingRef.current = false; // Ensure pan drag is disabled
         draggingMarkerIdRef.current = clickedMarkerId;
         hasDraggedRef.current = false;
         dragStartXRef.current = event.clientX;
+
+        // Capture initial marker position for atomic undo
+        const marker = markers.find(m => m.id === clickedMarkerId);
+        dragStartMarkerTimeRef.current = marker ? marker.time : null;
 
         // Change cursor to indicate drag mode
         if (containerRef.current) {
@@ -493,7 +506,7 @@ export function WaveformCanvas({
         }
       }
     },
-    [onPan, panOffset, findMarkerAtPixel, onUpdateMarker]
+    [onPan, panOffset, findMarkerAtPixel, onUpdateMarker, markers]
   );
 
   /**
@@ -517,7 +530,13 @@ export function WaveformCanvas({
           const newTime = pixelToTime(event.clientX);
           // Clamp to valid range (0 to duration)
           const clampedTime = Math.max(0, Math.min(newTime, peaks.duration));
-          onUpdateMarker(draggingMarkerIdRef.current, clampedTime);
+          // Use silent update during drag to avoid creating history entries for intermediate positions
+          if (onUpdateMarkerSilent) {
+            onUpdateMarkerSilent(draggingMarkerIdRef.current, clampedTime);
+          } else {
+            // Fallback to regular update if silent update not available
+            onUpdateMarker(draggingMarkerIdRef.current, clampedTime);
+          }
         }
         return;
       }
@@ -539,7 +558,7 @@ export function WaveformCanvas({
         onPan(newPan);
       }
     },
-    [onPan, pixelDistanceToTime, onUpdateMarker, pixelToTime, peaks.duration]
+    [onPan, pixelDistanceToTime, onUpdateMarker, onUpdateMarkerSilent, pixelToTime, peaks.duration]
   );
 
   /**
@@ -549,8 +568,30 @@ export function WaveformCanvas({
     (event: MouseEvent) => {
       // Handle end of marker drag
       if (isDraggingMarkerRef.current) {
+        const markerId = draggingMarkerIdRef.current;
+        const didDrag = hasDraggedRef.current;
+        const initialTime = dragStartMarkerTimeRef.current;
+
+        // If we actually dragged (not just clicked), commit the final position with history
+        if (didDrag && markerId && initialTime !== null) {
+          // Calculate final marker time from current mouse position
+          const newTime = pixelToTime(event.clientX);
+          // Clamp to valid range (0 to duration)
+          const clampedTime = Math.max(0, Math.min(newTime, peaks.duration));
+
+          // Use atomic update for proper undo support (single history entry for entire drag)
+          if (onUpdateMarkerAtomic) {
+            onUpdateMarkerAtomic(markerId, initialTime, clampedTime);
+          } else if (onUpdateMarker) {
+            // Fallback to regular update if atomic not available
+            onUpdateMarker(markerId, clampedTime);
+          }
+        }
+
+        // Reset drag state
         isDraggingMarkerRef.current = false;
         draggingMarkerIdRef.current = null;
+        dragStartMarkerTimeRef.current = null;
         hasDraggedRef.current = false;
 
         // Trigger redraw to clear active styling
@@ -588,7 +629,7 @@ export function WaveformCanvas({
         }
       }
     },
-    [onAddMarker, onPan, pixelToTime, peaks.duration, findMarkerAtPixel]
+    [onAddMarker, onPan, pixelToTime, peaks.duration, findMarkerAtPixel, onUpdateMarker, onUpdateMarkerAtomic]
   );
 
   // Set up global mouse move/up listeners for dragging and click detection

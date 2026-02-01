@@ -36,6 +36,11 @@ export interface MarkersActions {
   updateMarker: (id: string, time: number) => void;
   /** Update an existing marker's time without creating undo history (for intermediate drag updates) */
   updateMarkerSilent: (id: string, time: number) => void;
+  /**
+   * Update an existing marker's time with explicit from/to for atomic undo.
+   * Records the change from fromTime to toTime as a single history entry.
+   */
+  updateMarkerAtomic: (id: string, fromTime: number, toTime: number) => void;
   /** Update an existing marker's name */
   updateMarkerName: (id: string, name: string) => void;
   /** Update an existing marker's enabled state */

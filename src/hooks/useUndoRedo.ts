@@ -22,6 +22,13 @@ export interface UndoRedoResult<T> {
   setState: (newState: T | ((prev: T) => T)) => void;
   /** Update state without creating a history entry (for intermediate updates) */
   setStateWithoutHistory: (newState: T | ((prev: T) => T)) => void;
+  /**
+   * Set state with explicit "from" state for history.
+   * Used for atomic operations where we want to record a change from a specific point.
+   * @param fromState - The state to record as the "before" in history
+   * @param toState - The new state to set
+   */
+  setStateWithExplicitHistory: (fromState: T, toState: T) => void;
   /** Whether undo is available */
   canUndo: boolean;
   /** Whether redo is available */
@@ -159,10 +166,32 @@ export function useUndoRedo<T>(
     []
   );
 
+  const setStateWithExplicitHistory = useCallback(
+    (fromState: T, toState: T) => {
+      setHistory((prev) => {
+        // Don't create history entry if state hasn't changed
+        if (toState === fromState) {
+          return prev;
+        }
+
+        // Push the explicit "from" state to history, set "to" as present
+        const newPast = [...prev.past, fromState].slice(-maxHistory);
+
+        return {
+          present: toState,
+          past: newPast,
+          future: [], // Clear future on new action
+        };
+      });
+    },
+    [maxHistory]
+  );
+
   return {
     state: history.present,
     setState,
     setStateWithoutHistory,
+    setStateWithExplicitHistory,
     canUndo: history.past.length > 0,
     canRedo: history.future.length > 0,
     undo,

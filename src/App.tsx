@@ -37,7 +37,7 @@ function App() {
   });
 
   // Marker state management
-  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerName, updateMarkerEnabled, deleteMarker, setSelectedMarkerId, clearMarkers, canUndo, canRedo, undo, redo, reset } = useMarkers();
+  const { markers, selectedMarkerId, addMarker, updateMarker, updateMarkerSilent, updateMarkerAtomic, updateMarkerName, updateMarkerEnabled, deleteMarker, setSelectedMarkerId, clearMarkers, canUndo, canRedo, undo, redo, reset } = useMarkers();
 
   // Calculate sections from markers
   const sections = useMemo(() => getSections(markers, audioDuration), [markers, audioDuration]);
@@ -329,6 +329,8 @@ function App() {
             selectedMarkerId={selectedMarkerId}
             onSelectMarker={setSelectedMarkerId}
             onUpdateMarker={updateMarker}
+            onUpdateMarkerSilent={updateMarkerSilent}
+            onUpdateMarkerAtomic={updateMarkerAtomic}
             onDeleteMarker={deleteMarker}
             playbackState={playbackState}
             playbackCurrentTime={playbackCurrentTime}
