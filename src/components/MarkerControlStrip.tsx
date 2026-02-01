@@ -174,8 +174,9 @@ export function MarkerControlStrip({
         const isControlHovered = hoveredControlId === marker.id;
 
         // For enabled sections: show keyboard label by default, close icon on hover
-        // For disabled sections: always show close icon (will be implemented in US-003)
+        // For disabled sections: always show close icon with not-allowed cursor
         const hasKeyboardLabel = isEnabledSection && keyboardIndex !== undefined;
+        const isDisabledSection = section !== undefined && !section.enabled;
 
         return (
           <div
@@ -195,6 +196,7 @@ export function MarkerControlStrip({
             {/* Control container handles hover for swapping label/close */}
             <div
               className="relative flex items-center justify-center mt-[5px]"
+              style={{ cursor: isDisabledSection ? 'not-allowed' : 'default' }}
               onMouseEnter={() => setHoveredControlId(marker.id)}
               onMouseLeave={() => setHoveredControlId(null)}
             >
@@ -235,6 +237,7 @@ export function MarkerControlStrip({
                 /* For disabled sections or markers not starting a section: always show close icon */
                 <div
                   className="flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-colors hover:bg-red-600 hover:text-white"
+                  style={{ cursor: 'pointer' }}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (onDeleteMarker) {
