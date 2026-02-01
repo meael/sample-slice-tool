@@ -1,0 +1,12 @@
+# Ralph Progress Log
+Started: Sun Feb  1 2026
+
+## Codebase Patterns
+- Markers are managed via `useMarkers` hook in `src/hooks/useMarkers.ts`
+- Undo/redo managed via `useUndoRedo` hook in `src/hooks/useUndoRedo.ts`
+- Visual marker rendering happens in `WaveformCanvas.tsx` via canvas drawing in `drawWaveform`
+- Marker drag handled in WaveformCanvas.tsx via handleMouseDown, handleMouseMove (global), handleMouseUp (global)
+- Use state for visual updates that need re-renders, refs for values that change during mouse events
+- `draggingMarkerIdRef` tracks which marker is being dragged (ref for no re-render during drag)
+
+---

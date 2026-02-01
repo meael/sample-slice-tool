@@ -1,0 +1,298 @@
+## Codebase Patterns
+- Use Tailwind CSS for all styling with utility classes
+- Services are singletons exported as class instances (e.g., `export const audioService = new AudioService()`)
+- Hooks follow standard React naming convention with `use` prefix
+- Types are defined in separate files in `src/types/` directory
+- Audio formats supported: WAV, MP3, M4A, AAC, FLAC
+- SUPPORTED_AUDIO_FORMATS and SUPPORTED_EXTENSIONS are defined in `src/types/audio.ts`
+- Dark theme with neutral-600/700 borders and cyan-400 accent colors
+
+---
+
+## Previous Iterations
+
+### 2025-01-31 - US-001
+- Project setup with React 18 + TypeScript + Tailwind CSS
+- Basic folder structure created: src/components, src/hooks, src/services, src/types
+- Development server and production build working
+
+---
+
+### 2025-01-31 - US-002
+- Created AudioService class in `src/services/AudioService.ts`
+- Supports decoding of WAV, MP3, M4A, AAC, FLAC files using Web Audio API
+- Returns AudioBuffer with metadata (duration, sampleRate, numberOfChannels, length)
+- Error handling for unsupported and corrupted files
+
+---
+
+### 2025-01-31 - US-003
+- Created WaveformService class in `src/services/WaveformService.ts`
+- Downsamples AudioBuffer to peaks array for given resolution
+- Supports mono and stereo (combine or first channel strategy)
+- Returns normalized peak values (-1 to 1)
+- Helper methods for optimal peak count calculation
+
+---
+
+### 2025-01-31 - US-004
+- Created useMarkers hook in `src/hooks/useMarkers.ts`
+- Marker store with id and time position
+- CRUD operations: addMarker, updateMarker, deleteMarker, getMarkers, clearMarkers
+- Markers automatically sorted by time
+- Selected marker state management
+
+---
+
+### 2025-01-31 - US-005
+- Created useZoom hook in `src/hooks/useZoom.ts`
+- Zoom state with min/max bounds and step multiplier
+- Pan offset with boundary clamping
+- zoomAtPoint for cursor-centered zoom
+- Visible range calculation
+
+---
+
+### 2025-01-31 - US-006
+- Created DropZone component in `src/components/DropZone.tsx`
+- Full-page drop zone with drag/drop support
+- Visual feedback on drag (cyan border highlight)
+- File type validation for supported audio formats
+- Error message display for unsupported files
+
+---
+
+### 2026-01-31 - US-007
+- Added file picker button fallback to DropZone component
+- Files changed: `src/components/DropZone.tsx`
+- **Learnings for future iterations:**
+  - Use hidden `<input type="file">` with a ref and trigger via button click
+  - FILE_INPUT_ACCEPT combines both MIME types and extensions for browser compatibility
+  - Reset file input value after selection so same file can be selected again
+
+---
+
+### 2026-01-31 - US-008
+- Created WaveformCanvas component in `src/components/WaveformCanvas.tsx`
+- Updated App.tsx to integrate DropZone, AudioService, WaveformService, and WaveformCanvas
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Use devicePixelRatio for crisp canvas rendering on high-DPI displays
+  - Canvas rendering uses two strategies: bar mode for detailed view (peaksPerPixel < 1) and aggregate mode for zoomed-out view
+  - WaveformCanvas accepts optional `visibleRange` prop for zoom/pan support in future stories
+  - Symmetric waveform rendering (mirrored around center line) provides better visual representation
+  - Window resize listener needed for responsive re-rendering
+
+---
+
+### 2026-01-31 - US-009
+- Added mouse wheel zoom support to WaveformCanvas
+- Integrated useZoom hook in App.tsx with audioDuration state
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - The `onZoomAtPoint` callback pattern allows WaveformCanvas to remain presentation-focused while parent controls zoom logic
+  - `pixelToTime` function converts cursor X position to audio time using visibleRange
+  - Use `event.deltaY < 0` for zoom in (wheel up), `> 0` for zoom out (wheel down)
+  - Use `zoomStep: 1.2` for smoother zoom transitions (smaller than default 1.5)
+  - React wheel events need `event.preventDefault()` to avoid page scroll
+  - AudioService returns `metadata.duration` which must be stored for useZoom hook
+
+---
+
+### 2026-01-31 - US-010
+- Updated WaveformCanvas to support trackpad pinch/scroll zoom
+- Changed from React onWheel handler to native event listener with `passive: false`
+- Files changed: `src/components/WaveformCanvas.tsx`
+- **Learnings for future iterations:**
+  - Trackpad pinch gestures in browsers trigger wheel events with `ctrlKey: true`
+  - Native wheel event listener with `{ passive: false }` is required to prevent default browser zoom (ctrl+wheel)
+  - React's `onWheel` cannot properly prevent browser zoom because React attaches passive listeners
+  - The same `deltaY` logic works for both mouse wheel and trackpad - pinch out = zoom in (negative deltaY), pinch in = zoom out (positive deltaY)
+
+---
+
+### 2026-01-31 - US-011
+- Added horizontal pan support to WaveformCanvas
+- Implemented drag-to-pan with mouse (click and drag)
+- Implemented horizontal scroll/swipe pan (trackpad two-finger horizontal swipe or shift+wheel)
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Use refs for drag state (`isDraggingRef`, `dragStartXRef`, `dragStartPanRef`) to avoid stale closures in event handlers
+  - Add global `mousemove` and `mouseup` listeners on window to handle drag outside canvas bounds
+  - `pixelDistanceToTime` helper converts pixel delta to time delta based on current visible range
+  - Horizontal scroll detection: check `shiftKey` or compare `Math.abs(deltaX) > Math.abs(deltaY)`
+  - Cursor feedback: use `grab` cursor by default when pan is enabled, `grabbing` during drag
+  - Pass both `onPan` callback and `panOffset` value to WaveformCanvas - offset needed for calculating new pan positions
+
+---
+
+### 2026-01-31 - US-012
+- Added click-to-add-marker support to WaveformCanvas
+- Integrated useMarkers hook in App.tsx
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Distinguish click vs drag using a `hasDraggedRef` boolean and a pixel threshold (CLICK_THRESHOLD = 5px)
+  - Handle marker addition in `handleMouseUp` after checking `!hasDraggedRef.current`
+  - Clamp marker time to valid range (0 to duration) before adding
+  - The `addMarker` function from useMarkers automatically selects the new marker
+  - Clear markers when loading a new file using `clearMarkers()` callback
+  - Mouse event listeners should be set up unconditionally (not just when `onPan` is available) to support click detection
+
+---
+
+### 2026-01-31 - US-013
+- Added marker rendering to WaveformCanvas
+- Markers display as orange vertical lines spanning full waveform height
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Markers are rendered inside `drawWaveform` after the waveform and center line
+  - Marker visibility check: only render if marker.time is within visibleRange
+  - Use `Math.round()` on pixel position for crisp 1px lines
+  - Pass `markers` array from useMarkers to WaveformCanvas via App.tsx
+  - Marker rendering is re-triggered by including `markers` and `markerColor` in the `drawWaveform` dependency array
+
+---
+
+### 2026-01-31 - US-014
+- Implemented marker selection functionality in WaveformCanvas
+- Clicking near a marker (within 10px) selects it
+- Selected markers display in amber-400 color with 2.5px line width (vs orange-500/1.5px for unselected)
+- Clicking empty area deselects current marker
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - `MARKER_HIT_THRESHOLD = 10` defines the pixel tolerance for selecting markers
+  - `timeToPixel` function converts marker time to pixel X position for hit detection
+  - `findMarkerAtPixel` iterates through markers and returns the nearest one within threshold
+  - Selection logic order: 1) check for marker click → select, 2) check if already selected → deselect on empty click, 3) add new marker
+  - Pass `selectedMarkerId` and `onSelectMarker` props to WaveformCanvas for selection state management
+  - Use different `strokeStyle` and `lineWidth` in canvas for visual distinction of selected markers
+
+---
+
+### 2026-01-31 - US-015
+- Implemented marker dragging functionality in WaveformCanvas
+- Only selected markers can be dragged (click-and-drag to reposition)
+- Marker position updates in real-time during drag
+- Marker cannot be dragged outside audio duration (clamped to 0-duration range)
+- Cursor changes to `ew-resize` during marker drag
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Use separate refs for marker drag state (`isDraggingMarkerRef`, `draggingMarkerIdRef`) to separate from pan drag
+  - In `handleMouseDown`, check if clicking on selected marker first to decide drag mode
+  - Marker drag and pan drag are mutually exclusive - early return in `handleMouseMove` when dragging marker
+  - Use `pixelToTime` to calculate new marker position during drag, clamp result to valid range
+  - The `updateMarker` function from useMarkers takes (id, time) and re-sorts markers by time
+
+---
+
+### 2026-01-31 - US-016
+- Implemented keyboard delete for selected markers (Delete/Backspace)
+- Added `onDeleteMarker` callback prop to WaveformCanvas
+- Window-level keydown listener triggers deletion when marker is selected
+- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Use window-level keyboard event listener so keys work regardless of focus state
+  - Early return in the useEffect if no `onDeleteMarker` callback or no `selectedMarkerId` (no action if no marker selected)
+  - The `deleteMarker` function from useMarkers automatically clears `selectedMarkerId` if the deleted marker was selected
+  - Prevent default on Backspace to avoid browser back navigation
+
+---
+
+### 2026-01-31 - US-017
+- Implemented context menu for marker deletion (right-click on marker)
+- Created reusable ContextMenu component in `src/components/ContextMenu.tsx`
+- Updated WaveformCanvas with contextmenu event handler
+- Files changed: `src/components/ContextMenu.tsx`, `src/components/WaveformCanvas.tsx`
+- **Learnings for future iterations:**
+  - Use setTimeout(0) when attaching click-outside listeners to prevent immediate closure from the triggering event
+  - ContextMenu needs viewport boundary detection to avoid overflow off screen edges
+  - Right-click on marker should also select it for visual feedback
+  - Use React fragments (`<>...</>`) when component needs to render sibling elements (container + portal-like menu)
+  - The `findMarkerAtPixel` utility is reusable for both click selection and right-click context menu
+
+---
+
+### 2026-01-31 - US-018
+- Applied visual polish to achieve clean, instrument-like design
+- Removed shadow-lg from ContextMenu (no decorative shadows)
+- Adjusted marker line widths to exactly 1px (unselected) and 2px (selected)
+- Updated DropZone button to use neutral-800 background with tracking-wide for better monospace appearance
+- Removed opacity from error banner background for solid, flat color
+- Files changed: `src/App.tsx`, `src/components/ContextMenu.tsx`, `src/components/DropZone.tsx`, `src/components/WaveformCanvas.tsx`
+- **Learnings for future iterations:**
+  - Design system: dark theme (#1a1a1a bg), cyan-400 accents, neutral-600/700 borders
+  - Avoid shadow-*, gradient, and opacity-based transparency for instrument-like UI
+  - Use exact pixel widths (1px, 2px) for sharp, crisp lines on canvas
+  - Monospace font is already configured globally in index.css
+
+---
+
+### 2026-01-31 - US-019
+- Implemented "Load file" button in waveform view to allow loading new files
+- Created FileLoaderButton component in `src/components/FileLoaderButton.tsx`
+- Updated App.tsx with header area containing the load button and loading indicator
+- Files changed: `src/components/FileLoaderButton.tsx`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Reuse the file input pattern (hidden input + button trigger) from DropZone
+  - The handleFileLoaded callback already handles state reset (resetZoom, clearMarkers) so new loaders just need to call the same callback
+  - For memory management, React state replacement allows old objects to be garbage collected - no explicit cleanup needed
+  - Use flex layout with flex-shrink-0 for fixed header area above scrollable/flexible content
+
+---
+
+### 2026-02-01 - US-001 (includes US-002, US-003)
+- Implemented marker preview on waveform hover
+- Preview shows semi-transparent (50% opacity) vertical line at cursor position
+- Preview hides when cursor is within 10px of existing marker (US-002)
+- Preview hides when cursor leaves waveform area (US-003)
+- Files changed: `src/components/WaveformCanvas.tsx`
+- **Learnings for future iterations:**
+  - Use `useState` for preview position (`hoverTime`) since it needs to trigger re-renders
+  - Append hex opacity to color string (e.g., `markerColor + '80'`) for 50% transparency
+  - Reuse `findMarkerAtPixel` utility to check if hovering near existing markers
+  - Skip preview updates during drag operations to avoid interference
+
+---
+
+## 2026-02-01 - US-004
+- Updated keyboard playback to use section-based indices instead of marker-based
+- Key N now plays section N (sections[N-1]) instead of marker N segment
+- Refactored `useKeyboardControls` to accept `sections` array prop instead of `markers` + `duration`
+- Files changed: `src/hooks/useKeyboardControls.ts`, `src/App.tsx`
+- **Learnings for future iterations:**
+  - Sections are computed from markers using `getSections(markers, duration)` via `useMemo`
+  - A section only exists when there are at least 2 markers (section = range between consecutive markers)
+  - Key 1 plays sections[0], key 2 plays sections[1], etc. (1-indexed user-facing, 0-indexed internally)
+  - The sections array already includes `startTime` and `endTime`, so no need to calculate boundaries
+
+---
+
+## 2026-02-01 - US-002 (marker-interaction-undo-redo)
+- Implemented drag arrows (◀▶) that appear on marker hover in MarkerControlStrip
+- Added hover state tracking via `hoveredMarkerId` useState
+- Arrows appear with opacity transition on hover, disappear when mouse leaves
+- Restructured marker controls to use flex-col layout with top row (keyboard badge + delete) and bottom row (drag arrows)
+- Files changed: `src/components/MarkerControlStrip.tsx`
+- **Learnings for future iterations:**
+  - Use `onMouseEnter` and `onMouseLeave` on parent container to track hover state for child elements
+  - CSS opacity transitions with `transition-opacity duration-100` provide subtle, instant appearance
+  - Unicode arrows ◀▶ work well for drag affordance indicators
+  - Restructure layout to flex-col when adding vertical elements below existing horizontal content
+
+---
+
+## 2026-02-01 - US-005a (marker-interaction-undo-redo)
+- Created generic `useUndoRedo<T>` hook in `src/hooks/useUndoRedo.ts`
+- Hook wraps any state type with full undo/redo capability
+- Returns: state, setState, canUndo, canRedo, undo, redo, clearHistory
+- Linear history stack with configurable max size (default 50)
+- setState creates history entry (pushes to past), clears future
+- undo/redo move through history without losing states
+- Files changed: `src/hooks/useUndoRedo.ts`
+- **Learnings for future iterations:**
+  - Use `past` array (most recent at end) and `future` array (most recent at start) for efficient undo/redo
+  - Clear future stack on new setState to maintain linear history
+  - Check state equality to avoid unnecessary history entries
+  - Export `UndoRedoResult<T>` interface for type-safe hook consumers
+
+---

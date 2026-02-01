@@ -1,0 +1,105 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/section-enable-disable",
+  "description": "Section enable/disable feature - Allow sections to be toggled on/off with dynamic keyboard mapping that only applies to enabled sections",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add enabled property to Marker type",
+      "description": "As a developer, I need to store enabled state on markers so sections can inherit it.",
+      "acceptanceCriteria": [
+        "Add optional `enabled?: boolean` property to Marker interface in src/types/marker.ts",
+        "Default value is true when not specified (backwards compatible)",
+        "Update addMarker in useMarkers hook to set enabled: true on new markers",
+        "Add updateMarkerEnabled action to MarkersActions interface",
+        "Implement updateMarkerEnabled in useMarkers hook",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Add enabled property to Section type",
+      "description": "As a developer, I need sections to have an enabled property inherited from their start marker.",
+      "acceptanceCriteria": [
+        "Add `enabled: boolean` property to Section interface in src/types/section.ts",
+        "Update getSections in src/utils/sections.ts to inherit enabled from startMarker",
+        "If startMarker.enabled is undefined, default to true",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Add enable/disable toggle button to SectionHeader",
+      "description": "As a user, I want to toggle sections on/off with a button in the section header.",
+      "acceptanceCriteria": [
+        "Add toggle button to SectionHeader component (next to export button)",
+        "Button shows clear enabled state (e.g., eye icon open/closed or power icon)",
+        "Add onToggleEnabled callback prop to SectionHeaderProps",
+        "Clicking toggle calls onToggleEnabled with section id",
+        "Button is clearly part of the section control group (name, download, toggle)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Visual styling for disabled sections",
+      "description": "As a user, I want disabled sections to be visually distinct from enabled sections.",
+      "acceptanceCriteria": [
+        "Disabled sections appear muted (reduced opacity or grayed out)",
+        "Section header controls (name, export, toggle) appear dimmed when disabled",
+        "Export button is hidden or disabled for disabled sections",
+        "Clear visual distinction without being visually noisy",
+        "Waveform area for disabled section rendered with reduced opacity or muted colors",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Update keyboard mapping to enabled sections only",
+      "description": "As a user, I want keyboard shortcuts 1-9 to only trigger enabled sections.",
+      "acceptanceCriteria": [
+        "Filter sections to only enabled ones before applying keyboard mapping",
+        "Key 1 plays first enabled section, key 2 plays second enabled section, etc.",
+        "Disabling a section removes it from keyboard mapping and shifts subsequent keys",
+        "Re-enabling a section reinserts it based on waveform position",
+        "Maximum 9 enabled sections can have keyboard shortcuts",
+        "Update useKeyboardControls hook to work with enabled sections",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Display keyboard index on enabled sections",
+      "description": "As a user, I want to see which keyboard number triggers each enabled section.",
+      "acceptanceCriteria": [
+        "Enabled sections display their assigned keyboard number (1-9) near section name",
+        "Disabled sections do not display a keyboard number",
+        "Numbers update immediately when sections are toggled",
+        "Number badge styled consistently with section header controls",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,318 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/audio-slice-tool-phase1",
+  "description": "Phase 1 MVP - Minimal waveform viewer with manual marker placement. Load audio, view waveform, zoom, and add/move/delete markers. No playback or export.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Project setup and scaffolding",
+      "description": "As a developer, I need a React + TypeScript project with Tailwind CSS configured so I can begin building components.",
+      "acceptanceCriteria": [
+        "React 18+ with TypeScript configured",
+        "Tailwind CSS installed and configured",
+        "Development server runs without errors",
+        "Production build works",
+        "Basic folder structure: src/components, src/hooks, src/services, src/types",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Audio decoding service",
+      "description": "As a developer, I need a service to decode audio files into usable audio data using the Web Audio API.",
+      "acceptanceCriteria": [
+        "AudioService class/module in src/services/AudioService.ts",
+        "Accepts a File and returns decoded AudioBuffer using Web Audio API",
+        "Handles WAV, MP3, M4A, AAC, FLAC formats",
+        "Returns error for unsupported or corrupted files",
+        "Exposes audio metadata: duration, sample rate, number of channels",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Waveform data extraction service",
+      "description": "As a developer, I need to extract waveform peak data from the AudioBuffer for rendering.",
+      "acceptanceCriteria": [
+        "WaveformService class/module in src/services/WaveformService.ts",
+        "Function to downsample AudioBuffer to peaks array for given resolution",
+        "Supports mono and stereo (combine channels or use first channel)",
+        "Returns normalized values (-1 to 1)",
+        "Performant for files up to 10 minutes",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Marker state management hook",
+      "description": "As a developer, I need a hook to manage marker positions so they persist during the session.",
+      "acceptanceCriteria": [
+        "useMarkers hook in src/hooks/useMarkers.ts",
+        "Each marker has: id (string), time (number in seconds)",
+        "CRUD operations: addMarker, updateMarker, deleteMarker, getMarkers",
+        "Markers sorted by time position",
+        "Supports selectedMarkerId state",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Zoom and pan state management hook",
+      "description": "As a developer, I need a hook to manage zoom level and pan position for the waveform view.",
+      "acceptanceCriteria": [
+        "useZoom hook in src/hooks/useZoom.ts",
+        "Tracks zoom level (1 = full view, higher = zoomed in)",
+        "Tracks pan offset (horizontal scroll position in seconds)",
+        "Functions: zoomIn, zoomOut, zoomAtPoint, setPan",
+        "Respects min/max zoom bounds",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Audio file drop zone component",
+      "description": "As a user, I want to drag and drop an audio file onto the page so I can load it quickly.",
+      "acceptanceCriteria": [
+        "DropZone component in src/components/DropZone.tsx",
+        "Full-page drop zone visible on initial load",
+        "Visual feedback when dragging file over drop zone (border highlight)",
+        "Accepts WAV, MP3, M4A, AAC, FLAC files only",
+        "Shows error message for unsupported file types",
+        "Calls onFileLoaded callback with File object",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "File picker button in drop zone",
+      "description": "As a user, I want a file picker button as an alternative to drag and drop.",
+      "acceptanceCriteria": [
+        "Choose file button visible in DropZone component",
+        "Opens native file picker filtered to supported audio types",
+        "Loads file on selection via same onFileLoaded callback",
+        "Styled minimally (monospace font, no decorative elements)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Basic waveform canvas rendering",
+      "description": "As a user, I want to see the audio waveform displayed so I can visually inspect the audio.",
+      "acceptanceCriteria": [
+        "WaveformCanvas component in src/components/WaveformCanvas.tsx",
+        "Full-width Canvas element renders waveform using Canvas 2D API",
+        "Accurate amplitude representation (peaks visible)",
+        "High contrast waveform color against dark background",
+        "Responsive: re-renders on window resize",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Zoom with mouse wheel",
+      "description": "As a user, I want to zoom in/out on the waveform using my mouse wheel so I can inspect details.",
+      "acceptanceCriteria": [
+        "Mouse wheel up = zoom in, wheel down = zoom out",
+        "Zoom centered on cursor horizontal position",
+        "Minimum zoom: full waveform fits in view",
+        "Maximum zoom: fine detail level (~100 samples per pixel)",
+        "Smooth zoom transitions using requestAnimationFrame",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Zoom with trackpad gestures",
+      "description": "As a user, I want to zoom using trackpad gestures so the tool works naturally on laptops.",
+      "acceptanceCriteria": [
+        "Two-finger pinch zoom works (where supported via wheel event with ctrlKey)",
+        "Same zoom behavior as mouse wheel (centered on cursor)",
+        "No conflicts with browser native zoom (preventDefault where appropriate)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Horizontal pan when zoomed",
+      "description": "As a user, I want to pan horizontally when zoomed in so I can navigate the waveform.",
+      "acceptanceCriteria": [
+        "Horizontal scroll or two-finger horizontal swipe pans view",
+        "Cannot pan beyond waveform boundaries (0 to duration)",
+        "Pan position preserved during zoom operations",
+        "Smooth panning without visual jumps",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Add marker on click",
+      "description": "As a user, I want to click on the waveform to add a marker at that position.",
+      "acceptanceCriteria": [
+        "Single click on waveform adds marker at click position",
+        "Click position correctly converted to audio time based on zoom/pan",
+        "New marker is automatically selected",
+        "Uses useMarkers hook for state management",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Render markers on waveform",
+      "description": "As a user, I want to see all markers displayed on the waveform so I know where my slices are.",
+      "acceptanceCriteria": [
+        "Markers render as thin vertical lines (1-2px) spanning waveform height",
+        "Marker color distinct from waveform (e.g., red or orange)",
+        "Selected marker has different visual state (brighter or thicker)",
+        "Markers visible at all zoom levels",
+        "Markers re-render correctly when zooming/panning",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Select marker on click",
+      "description": "As a user, I want to select a marker so I can move or delete it.",
+      "acceptanceCriteria": [
+        "Click within 10px of a marker selects it",
+        "Selected marker visually distinct (different color or thickness)",
+        "Only one marker selected at a time",
+        "Clicking empty area (away from markers) deselects current marker",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Move marker by dragging",
+      "description": "As a user, I want to drag a marker horizontally to reposition it.",
+      "acceptanceCriteria": [
+        "Drag selected marker to move it horizontally",
+        "Marker position updates visually during drag (real-time feedback)",
+        "Marker cannot be dragged outside audio duration (0 to end)",
+        "Cursor changes to grab/grabbing during drag",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Delete marker with keyboard",
+      "description": "As a user, I want to delete a selected marker using Delete or Backspace key.",
+      "acceptanceCriteria": [
+        "With marker selected, pressing Delete key removes it",
+        "With marker selected, pressing Backspace key removes it",
+        "Selection clears after deletion",
+        "No action if no marker is selected",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Delete marker with context menu",
+      "description": "As a user, I want to right-click a marker and choose Delete as an alternative deletion method.",
+      "acceptanceCriteria": [
+        "ContextMenu component in src/components/ContextMenu.tsx",
+        "Right-click on or near marker shows context menu with Delete option",
+        "Clicking Delete removes the marker",
+        "Context menu closes after action or click outside",
+        "Styled minimally: dark background, light text, no shadows or gradients",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Load new file replaces current",
+      "description": "As a user, I want to be able to load a different file, replacing the current one.",
+      "acceptanceCriteria": [
+        "Small load new file button visible after file is loaded",
+        "Clicking button shows DropZone again or opens file picker",
+        "Loading new file clears previous waveform and all markers",
+        "Clean state reset (no memory leaks from previous AudioBuffer)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Visual polish and design system",
+      "description": "As a user, I want the interface to feel clean and instrument-like so it is pleasant to use.",
+      "acceptanceCriteria": [
+        "Dark neutral background (#1a1a1a or similar)",
+        "High-contrast waveform color (cyan or similar)",
+        "Thin sharp marker lines (1-2px, red or orange)",
+        "Monospace font for all text (system monospace or JetBrains Mono)",
+        "No gradients, shadows, or decorative elements anywhere",
+        "Consistent spacing and alignment throughout",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

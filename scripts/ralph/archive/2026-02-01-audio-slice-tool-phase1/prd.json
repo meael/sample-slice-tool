@@ -1,0 +1,120 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/marker-hover-preview-deletion",
+  "description": "Marker UX enhancements - Add hover preview for marker placement and close icon for direct marker deletion",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add hover time tracking to WaveformCanvas",
+      "description": "As a developer, I need to track the cursor position over the waveform to enable hover preview functionality.",
+      "acceptanceCriteria": [
+        "Add hoverTime state (number | null) to WaveformCanvas component",
+        "Update hoverTime on mouse move over waveform area",
+        "Set hoverTime to null on mouse leave",
+        "Convert pixel position to audio time using existing zoom/pan logic",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Render preview marker on hover",
+      "description": "As a user, I want to see a preview of where a marker will be placed when I hover over the waveform.",
+      "acceptanceCriteria": [
+        "Semi-transparent vertical line (50% opacity) renders at hoverTime position",
+        "Preview uses same shape as placed markers (vertical line spanning waveform height)",
+        "Preview color matches placed marker color but with reduced opacity",
+        "Preview position updates smoothly as cursor moves",
+        "No visual jitter or lag while moving cursor",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Hide preview when hovering existing markers",
+      "description": "As a user, I don't want to see the preview marker when my cursor is over an existing marker.",
+      "acceptanceCriteria": [
+        "Preview marker is hidden when cursor is within 10px of an existing marker",
+        "Check all markers in the markers array for proximity",
+        "Preview reappears immediately when cursor moves away from markers",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Add close icon component for markers",
+      "description": "As a developer, I need a close icon component that can be rendered above each marker.",
+      "acceptanceCriteria": [
+        "Create MarkerCloseIcon component or add to existing marker rendering",
+        "Icon displays '×' character or similar close indicator",
+        "Icon is positioned centered above the marker line",
+        "Icon has small circular or pill background for visibility",
+        "Icon size approximately 16-20px clickable area",
+        "Styled consistently with app design (dark background, light icon)",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Render close icon on all placed markers",
+      "description": "As a user, I want to see a close icon on each marker so I know I can delete it.",
+      "acceptanceCriteria": [
+        "Close icon renders above every placed marker (always visible)",
+        "Icon position updates correctly when zooming/panning",
+        "Icon visible at all zoom levels",
+        "Icons do not overlap with each other (markers too close edge case acceptable)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Delete marker via close icon click",
+      "description": "As a user, I want to click the close icon to remove a marker immediately.",
+      "acceptanceCriteria": [
+        "Clicking close icon calls deleteMarker with the marker's id",
+        "Marker is removed from UI immediately",
+        "Click event stops propagation (does not trigger waveform click)",
+        "Click does not trigger marker selection or drag",
+        "Works for any marker, not just selected marker",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Add hover feedback to close icon",
+      "description": "As a user, I want visual feedback when hovering the close icon so I know it's interactive.",
+      "acceptanceCriteria": [
+        "Cursor changes to pointer when hovering close icon",
+        "Close icon shows hover state (brighter color or increased opacity)",
+        "Hover state is visually distinct from default state",
+        "Hover state does not affect nearby markers or waveform",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# Ralph Progress Log
+Started: Sat Feb  1 2026
+
+## Codebase Patterns
+- Markers are the source of truth - Sections are derived from markers via getSections utility
+- useMarkers hook follows pattern: add action to MarkersActions interface, implement callback with useCallback, include in return object
+- When adding properties to Marker, make optional with `?` for backwards compatibility
+- Section properties are not optional (unlike Marker) - use `boolean` not `boolean?`
+- Use nullish coalescing `??` to default undefined to true for backwards compatibility
+- getSections is the single point where Marker -> Section transformation happens
+- SectionHeader follows pattern: section prop changes -> update start marker via callback -> sections recalculate
+- Button icons use inline SVG for consistency (no external icon library)
+- Color states: cyan (text-cyan-400) for enabled, gray (text-neutral-500) for disabled
+- Toggle buttons use onClick with e.stopPropagation() to prevent waveform interaction
+- Z-index layering: z-10 (waveform) < z-20 (control strip) < z-50 (popovers/context menus)
+- useKeyboardControls receives all sections, filtering happens inside handleKeyDown callback
+- Filtering with `sections.filter(s => s.enabled)` creates dynamic keyboard mapping
+- Keyboard index computation happens in MarkerControlStrip (parent) and is passed down via props
+
+---
+

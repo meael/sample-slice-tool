@@ -1,58 +1,58 @@
 # Ralph Progress Log
-Started: Sun Feb  1 17:55:14 EET 2026
+Started: Sun Feb  1 21:10:08 EET 2026
+---
 
 ## Codebase Patterns
-- Markers are managed via `useMarkers` hook in `src/hooks/useMarkers.ts`
-- Visual marker rendering happens in `WaveformCanvas.tsx` via canvas drawing in `drawWaveform`
-- Marker state includes `draggingMarkerIdRef` (ref for interaction) and `draggingMarkerId` (state for re-renders)
-- Use state for visual updates that need re-renders, refs for values that change during mouse events
+- Marker controls are rendered in `MarkerControlStrip.tsx` above the waveform
+- Sections are derived from consecutive markers; a section's enabled state comes from `startMarker.enabled`
+- Use `markerKeyboardIndexMap` to get keyboard index (1-9) for markers starting enabled sections
+- Use `markerSectionMap` to check if a marker starts a section and whether it's enabled/disabled
 
 ---
 
-## 2026-02-01 - US-001
-- Removed persistent marker selection state - markers now only show active styling during drag
-- Changed `handleMouseDown` to allow dragging any marker (not just selected ones)
-- Added `draggingMarkerId` state for visual feedback during drag only
-- Removed keyboard Delete/Backspace deletion (users use context menu or × button instead)
-- Updated `handleMouseUp` to not select markers on click
-- Files changed:
-  - `src/components/WaveformCanvas.tsx`
+## 2026-02-01 21:15 - US-001
+- Implemented showing keyboard label (1-9) as default for enabled sections
+- Close icon is now hidden for markers starting enabled sections
+- Added `getMarkerSectionMap()` helper to determine if a marker starts an enabled/disabled section
+- Files changed: `src/components/MarkerControlStrip.tsx`
 - **Learnings for future iterations:**
-  - The `selectedMarkerId` prop and `onSelectMarker` callback still exist in props interface but are no longer used - left for backwards compatibility
-  - Visual active state uses `draggingMarkerId` state variable (triggers re-render) while drag detection uses `draggingMarkerIdRef` (no re-render needed during mouse events)
-  - Markers can be deleted via: context menu (right-click) or × button in MarkerControlStrip
+  - The keyboard label was previously positioned to the left of the close icon; now it's centered above the marker
+  - Markers not starting any section (e.g., the last marker) still show the close icon
+  - Browser testing verified: labels 1, 2, 3 visible for Section 1, 2, 3; × icon visible for end marker
 ---
 
-## 2026-02-01 - US-003
-- Expanded marker hover and drag hit area from 10px to 16px threshold
-- The `MARKER_HIT_THRESHOLD` constant controls the invisible hit area for marker interaction
-- Files changed:
-  - `src/components/WaveformCanvas.tsx`
+## 2026-02-01 21:45 - US-002
+- Implemented hover-to-reveal close icon behavior for enabled sections
+- Added `hoveredControlId` state to track which control area is being hovered
+- Both keyboard label and close icon are rendered with opacity transitions (150ms)
+- Close icon uses `hover:bg-red-600` for danger color on hover
+- Used `pointerEvents: 'none'` when close icon is hidden to prevent accidental clicks
+- Files changed: `src/components/MarkerControlStrip.tsx`
 - **Learnings for future iterations:**
-  - `MARKER_HIT_THRESHOLD` (line ~10 in WaveformCanvas.tsx) controls how far from a marker line users can click to grab it
-  - The `findMarkerAtPixel` function finds the nearest marker within the threshold, so close markers are handled correctly (nearest wins)
-  - Hit area is invisible - purely for hit-testing, no visual changes
+  - Use opacity transitions with `pointerEvents` toggle for smooth show/hide without layout shift
+  - The keyboard label element itself has no click handler, only the close icon is clickable
+  - Browser testing verified: label swaps to red × on hover, fades back on mouseout, click deletes marker
 ---
 
-## 2026-02-01 - US-004
-- Fixed keyboard badge and close icon alignment above markers
-- Close (×) icon is now centered directly above the marker line
-- Keyboard badge is positioned to the left of the close icon using absolute positioning
-- Files changed:
-  - `src/components/MarkerControlStrip.tsx`
+## 2026-02-01 22:15 - US-003
+- Implemented `cursor: not-allowed` on the control container for disabled sections
+- Added `isDisabledSection` variable to detect markers starting disabled sections
+- Close icon gets explicit `cursor: pointer` style to override parent's `not-allowed`
+- Files changed: `src/components/MarkerControlStrip.tsx`
 - **Learnings for future iterations:**
-  - Marker control elements (keyboard badge, close icon, drag arrows) are rendered in `MarkerControlStrip.tsx`
-  - Use `position: absolute` with `right: 100%` to position elements to the left of a centered element
-  - The keyboard badge only appears for markers that start an enabled section (determined by `markerKeyboardIndexMap`)
+  - Disabled section detection: `section !== undefined && !section.enabled`
+  - Parent cursor + child cursor override pattern: parent sets `not-allowed`, child sets `pointer`
+  - Browser testing verified: disabled section shows × (not keyboard label), cursor is not-allowed on container but pointer on close icon, red hover effect works, clicking deletes marker
 ---
 
-## 2026-02-01 - US-002 (Fix)
-- Fixed US-002 implementation: replaced visible ◀▶ arrows with CSS cursor style
-- Now uses `cursor: ew-resize` on marker hover for cleaner drag affordance
-- Removed the arrow elements entirely - cursor style is the standard UX pattern
-- Files changed:
-  - `src/components/MarkerControlStrip.tsx`
+## 2026-02-01 22:45 - US-004
+- Added explicit min-w/min-h dimensions to control container for stable hover area
+- Added `pointerEvents: 'none'` to keyboard label to prevent hover state flickering
+- Adjusted top margin from 5px to 3px for better visual alignment
+- Files changed: `src/components/MarkerControlStrip.tsx`
 - **Learnings for future iterations:**
-  - CSS cursor styles (`ew-resize`, `grab`, `grabbing`) are preferred over visible drag indicators
-  - The `hoveredMarkerId` state in MarkerControlStrip.tsx tracks which marker is hovered
+  - Use min-w/min-h on parent container to create stable hover target area
+  - Apply `pointerEvents: 'none'` to child elements that shouldn't affect hover state
+  - MarkerControlStrip and WaveformCanvas are vertically stacked, so no drag interference is possible
+  - Browser testing verified: rapid mouse movement shows no flickering, transitions are smooth
 ---

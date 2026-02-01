@@ -1,0 +1,11 @@
+# Ralph Progress Log
+Started: Sun Feb  1 2026
+
+## Codebase Patterns
+- Marker controls rendered in `src/components/MarkerControlStrip.tsx`
+- The `markerKeyboardIndexMap` maps marker IDs to keyboard indices (1-9) for enabled sections
+- Hover state tracked via `hoveredMarkerId` state in MarkerControlStrip
+- Use CSS transitions for smooth opacity fades (e.g., `transition-opacity duration-150`)
+- Z-index layering: z-10 (waveform) < z-20 (control strip) < z-40 (dropdowns) < z-50 (popovers)
+
+---

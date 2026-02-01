@@ -1,0 +1,204 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/section-validity-layout",
+  "description": "Section validity and layout - Define sections as marker pairs, render inactive areas grayscale, reposition section controls between markers, fix z-index layering",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create getSections helper function",
+      "description": "As a developer, I need a helper function to calculate valid sections from markers.",
+      "acceptanceCriteria": [
+        "Create getSections(markers, duration) function in src/utils/sections.ts or similar",
+        "Returns array of Section objects: {id, startMarker, endMarker, startTime, endTime, name}",
+        "Section exists only between consecutive markers (marker N to marker N+1)",
+        "Range before first marker is NOT a section",
+        "Range after last marker is NOT a section",
+        "Single marker alone returns empty array (no sections)",
+        "Section name inherited from startMarker.name",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Add Section type definition",
+      "description": "As a developer, I need a Section type to represent valid audio sections.",
+      "acceptanceCriteria": [
+        "Create Section interface in src/types/section.ts",
+        "Fields: id (string), startMarker (Marker), endMarker (Marker), startTime (number), endTime (number), name (string)",
+        "Export Section type for use in components and hooks",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Render inactive waveform areas in grayscale",
+      "description": "As a user, I want to clearly see which parts of the waveform are not valid sections.",
+      "acceptanceCriteria": [
+        "WaveformCanvas receives sections array as prop",
+        "Waveform before first marker rendered in grayscale (desaturated color)",
+        "Waveform after last marker rendered in grayscale",
+        "Active sections (between markers) rendered in normal waveform color",
+        "Grayscale achieved via desaturated RGB values, not just opacity",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Update keyboard playback for section-based indices",
+      "description": "As a user, I want keyboard shortcuts to play sections, not marker-based ranges.",
+      "acceptanceCriteria": [
+        "Key 1 plays section 1 (audio between marker 0 and marker 1)",
+        "Key 2 plays section 2 (audio between marker 1 and marker 2)",
+        "Key N plays section N if it exists",
+        "Pressing key for non-existent section does nothing",
+        "Maximum 9 sections playable via keyboard (keys 1-9)",
+        "Update useKeyboardControls to use sections array",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Remove number badges from marker control strip",
+      "description": "As a developer, I need to remove keyboard number badges since they no longer apply to individual markers.",
+      "acceptanceCriteria": [
+        "Remove number badges (1-9) from MarkerControlStrip",
+        "Delete icons remain positioned above their markers",
+        "Control strip still displays marker controls (delete, name, export)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create SectionHeader component",
+      "description": "As a developer, I need a component to display section name and export button between markers.",
+      "acceptanceCriteria": [
+        "Create SectionHeader component in src/components/SectionHeader.tsx",
+        "Receives section, onExport, onUpdateName, containerWidth, visibleRange props",
+        "Displays section name and export button as a grouped unit",
+        "Positioned horizontally centered between section start and end markers",
+        "Export button immediately right of name with small gap (4-8px)",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Integrate SectionHeader into control strip",
+      "description": "As a user, I want section names and export buttons displayed between their defining markers.",
+      "acceptanceCriteria": [
+        "SectionHeader components rendered in control strip for each section",
+        "Headers positioned between their start and end markers",
+        "Delete icons remain above individual markers (unchanged)",
+        "Headers move correctly when zooming/panning",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Implement name truncation with available space calculation",
+      "description": "As a user, I want section names to truncate when there isn't enough space between markers.",
+      "acceptanceCriteria": [
+        "Calculate available width: marker2X - marker1X - buttonWidth - padding",
+        "If name fits, show full name",
+        "If name doesn't fit, truncate with ellipsis",
+        "Track whether name is truncated in state",
+        "Minimum display: hide name if space < 40px, show only export button",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Add popover for editing truncated names",
+      "description": "As a user, I want to click on a truncated name to edit it in a popover.",
+      "acceptanceCriteria": [
+        "Clicking truncated name opens floating popover",
+        "Popover contains input field with full name",
+        "Input pre-filled and text selected",
+        "Enter saves, Escape cancels, blur saves",
+        "Popover positioned below name, doesn't overflow viewport",
+        "Full (non-truncated) names edit inline as before",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Fix z-index layering for control strip",
+      "description": "As a user, I want section controls to always be visible and clickable above the waveform.",
+      "acceptanceCriteria": [
+        "Control strip has explicit z-index (e.g., z-20) higher than waveform",
+        "Waveform canvas has lower z-index (e.g., z-10 or default)",
+        "Popovers have highest z-index (e.g., z-50)",
+        "No click events intercepted by waveform when clicking controls",
+        "Controls always visible at all zoom levels",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Update export handlers to use sections",
+      "description": "As a developer, I need to update export logic to use section definitions instead of marker-based ranges.",
+      "acceptanceCriteria": [
+        "Individual export uses section.startTime and section.endTime",
+        "Bulk export iterates over sections array",
+        "No export available for ranges outside valid sections",
+        "Export All button hidden when no valid sections exist",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Update playback progress to respect section boundaries",
+      "description": "As a user, I want playback progress fill to only show within valid sections.",
+      "acceptanceCriteria": [
+        "Playback fill only appears within the active section boundaries",
+        "Fill does not extend into inactive (grayscale) areas",
+        "Progress correctly bounded by section start and end times",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

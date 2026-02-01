@@ -1,0 +1,26 @@
+# Ralph Progress Log
+Started: Sat Feb  1 2026
+
+## Codebase Patterns
+- Use `import type` for type-only imports (verbatimModuleSyntax is enabled)
+- Markers are the source of truth - Sections are derived from markers via getSections utility
+- useMarkers hook follows pattern: add action to MarkersActions interface, implement callback with useCallback, include in return object
+- When adding properties to Marker, make optional with `?` for backwards compatibility
+- Section properties are not optional (unlike Marker) - use `boolean` not `boolean?`
+- getSections is the single point where Marker -> Section transformation happens
+- SectionHeader follows pattern: section prop changes -> update start marker via callback -> sections recalculate
+- Button icons use inline SVG for consistency (no external icon library)
+- Color states: cyan (text-cyan-400) for enabled, gray (text-neutral-500) for disabled
+- Toggle buttons use onClick with e.stopPropagation() to prevent waveform interaction
+- Z-index layering: z-10 (waveform) < z-20 (control strip) < z-40 (dropdowns) < z-50 (popovers/modals)
+- useKeyboardControls receives all sections, filtering happens inside handleKeyDown callback
+- Filtering with `sections.filter(s => s.enabled)` creates dynamic keyboard mapping
+- Keyboard index computation happens in MarkerControlStrip (parent) and is passed down via props
+- SectionHeader uses section.id for callbacks (not marker.id like MarkerControlStrip)
+- Position calculation uses getPixelX helper to convert time to pixel position
+- SectionDropdown component: internal state, click-outside close, items/children props
+- State-driven animations simpler than CSS keyframes for single-pulse effects
+- Conditional className pattern: `${condition ? 'active-styles' : 'default-styles'}`
+
+---
+

@@ -1,0 +1,97 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/section-action-menu",
+  "description": "Section action menu and keyboard feedback - Consolidate section actions into dropdown menu and improve keyboard interaction visibility with blink feedback",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create section dropdown menu component",
+      "description": "As a developer, I need a reusable dropdown menu component for section actions.",
+      "acceptanceCriteria": [
+        "Create SectionDropdown component in src/components/SectionDropdown.tsx",
+        "Component has open/close state managed internally",
+        "Menu renders with z-index higher than control strip (z-30 or higher)",
+        "Clicking outside the menu closes it",
+        "Menu items are rendered as text buttons (not icons)",
+        "Component accepts children or items prop for menu content",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Add dropdown trigger to section header",
+      "description": "As a user, I want to access section actions via a dropdown arrow next to the section name.",
+      "acceptanceCriteria": [
+        "Add dropdown arrow (▼ or similar) inline immediately after section name",
+        "Arrow is visually lightweight but clearly clickable",
+        "Clicking arrow opens the SectionDropdown menu",
+        "Remove standalone export/download button from SectionHeader",
+        "Remove standalone enable/disable toggle button from SectionHeader",
+        "Dropdown remains accessible at all zoom levels",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Implement dropdown menu content with actions",
+      "description": "As a user, I want the dropdown menu to show available actions and keyboard shortcut hints.",
+      "acceptanceCriteria": [
+        "Menu shows keyboard shortcut number at top (e.g., 'Shortcut: 1')",
+        "Menu shows 'Download' action item",
+        "Menu shows 'Enable' or 'Disable' text based on current section.enabled state",
+        "Clicking 'Download' triggers export flow and closes menu",
+        "Clicking 'Enable/Disable' toggles section state and closes menu",
+        "Menu closes after any action is clicked",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Move keyboard badge to left marker position",
+      "description": "As a user, I want to see the keyboard number near the left marker of each section.",
+      "acceptanceCriteria": [
+        "Keyboard number badge (1-9) displayed next to left marker's delete (×) icon",
+        "Badge styled as small key cap (background + number, like a keyboard key)",
+        "Badge is smaller than marker controls but clearly readable",
+        "Position is consistent relative to left marker across all sections",
+        "Only enabled sections display a keyboard number badge",
+        "Remove keyboard badge from SectionHeader component",
+        "Numbers update immediately when sections are enabled/disabled",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Add keyboard press blink animation",
+      "description": "As a user, I want visual confirmation when I press a keyboard shortcut to play a section.",
+      "acceptanceCriteria": [
+        "Pressing number key (1-9) causes corresponding keyboard badge to blink/highlight",
+        "Animation is a short pulse effect (~200-300ms) using opacity or color change",
+        "Animation is noticeable but not distracting",
+        "Only the section mapped to the pressed key shows the blink",
+        "Blink only occurs for enabled sections (disabled sections show no feedback)",
+        "Animation triggers immediately on keypress, decoupled from playback state",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

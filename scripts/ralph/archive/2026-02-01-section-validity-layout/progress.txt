@@ -1,0 +1,17 @@
+# Ralph Progress Log
+Started: Sat Feb  1 2026
+
+## Codebase Patterns
+- Use `import type` for type-only imports (verbatimModuleSyntax is enabled)
+- Utils go in `src/utils/` directory
+- Types go in `src/types/` directory with their own files
+- Use `void` to silence unused parameter warnings when params are required by API but not used
+- Section name is inherited from `startMarker.name`
+- Section id format is `section-${startMarker.id}-${endMarker.id}`
+- Types should be in their own files in `src/types/` directory
+- Use `useMemo` to memoize expensive calculations like `getSections(markers, audioDuration)`
+- Z-index layering: `z-10` (waveform) < `z-20` (control strip) < `z-50` (popovers/context menus)
+- Sections array is derived from markers via `getSections(markers, audioDuration)` in useMemo
+
+---
+

@@ -1,0 +1,57 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/atomic-marker-drag-undo",
+  "description": "Fix undo behavior for marker dragging - treat drag as single atomic action instead of recording intermediate positions",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add silent state update to useUndoRedo",
+      "description": "As a developer, I need a way to update state without creating a history entry, for intermediate drag positions.",
+      "acceptanceCriteria": [
+        "Add setStateWithoutHistory(newState) function to useUndoRedo hook",
+        "setStateWithoutHistory updates current state but does NOT push to history stack",
+        "Existing setState behavior unchanged (still creates history entry)",
+        "Export setStateWithoutHistory from the hook return value",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Expose silent marker update in useMarkers",
+      "description": "As a developer, I need useMarkers to support updating marker position without creating history entry.",
+      "acceptanceCriteria": [
+        "Add updateMarkerSilent(id, time) function to useMarkers",
+        "updateMarkerSilent uses setStateWithoutHistory internally",
+        "updateMarkerSilent updates marker position without creating undo history",
+        "Existing updateMarker behavior unchanged (still creates history entry)",
+        "Export updateMarkerSilent from useMarkers hook",
+        "Update MarkersActions type to include updateMarkerSilent",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Implement atomic drag undo in WaveformCanvas",
+      "description": "As a user, I want a single undo to fully revert a marker drag operation.",
+      "acceptanceCriteria": [
+        "Capture marker's initial position when drag starts (mousedown)",
+        "Use updateMarkerSilent for intermediate positions during drag (mousemove)",
+        "Use updateMarker (with history) only on drag end (mouseup) to commit final position",
+        "Single undo fully reverts the drag to pre-drag position",
+        "Single redo restores the post-drag position",
+        "Rapid separate drags (drag-release-drag-release) each create their own undo entry",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/marker-playback-controls",
+  "description": "Marker playback controls - Keyboard-driven segment playback with visual progress, pause/resume, and smooth audio transitions",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Create marker control strip component",
+      "description": "As a user, I want marker controls displayed in a dedicated strip above the waveform so they don't obscure the audio visualization.",
+      "acceptanceCriteria": [
+        "Create MarkerControlStrip component in src/components/MarkerControlStrip.tsx",
+        "Renders horizontal strip with solid black background (#000 or #111)",
+        "Strip height 28-32px, spans full width of waveform container",
+        "Receives markers array and containerWidth as props",
+        "Clear visual separation from waveform below",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Move close icons to control strip",
+      "description": "As a user, I want close icons positioned in the control strip above the waveform so they're always accessible.",
+      "acceptanceCriteria": [
+        "Close icons render in MarkerControlStrip, not on waveform canvas",
+        "Icons horizontally aligned with corresponding marker positions",
+        "Icons clickable and delete marker on click via onDeleteMarker callback",
+        "Icons have hover feedback (pointer cursor, opacity change)",
+        "Click events stop propagation",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Display number badges on markers",
+      "description": "As a user, I want to see which number key (1-9) corresponds to each marker for quick playback triggering.",
+      "acceptanceCriteria": [
+        "Each marker displays number badge (1-9) in control strip next to close icon",
+        "Numbers assigned in ascending order by marker time position",
+        "Badge styled as small rounded rectangle with monospace font",
+        "Maximum 9 markers get badges (markers 10+ show no number)",
+        "Numbers update correctly when markers added/removed/reordered",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Integrate control strip into App layout",
+      "description": "As a developer, I need to integrate the control strip above the waveform in the app layout.",
+      "acceptanceCriteria": [
+        "MarkerControlStrip renders above WaveformCanvas in App.tsx",
+        "Control strip receives markers, visibleRange, and delete callback",
+        "Control strip width syncs with waveform container width",
+        "Layout maintains proper visual hierarchy",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Create playback service with Web Audio API",
+      "description": "As a developer, I need a service to handle audio segment playback with fade-out support.",
+      "acceptanceCriteria": [
+        "Create usePlayback hook in src/hooks/usePlayback.ts",
+        "Hook receives audioBuffer and manages playback state",
+        "Exposes playSegment(startTime, endTime) function",
+        "Exposes stop() function to halt playback",
+        "Exposes pause() and resume() functions",
+        "Exposes state: 'idle' | 'playing' | 'paused'",
+        "Exposes currentTime (number) for progress tracking",
+        "Uses Web Audio API AudioBufferSourceNode for playback",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Implement fade-out on playback switch",
+      "description": "As a user, I want smooth audio transitions when switching between segments.",
+      "acceptanceCriteria": [
+        "Add GainNode to playback chain in usePlayback",
+        "When playSegment called while playing, fade out current (200ms ramp to 0)",
+        "New segment starts immediately (concurrent with fade)",
+        "No audio overlap or harsh cuts",
+        "Fade implemented via gain.linearRampToValueAtTime",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Add keyboard listener for number keys 1-9",
+      "description": "As a user, I want to press number keys 1-9 to instantly play the corresponding marker's segment.",
+      "acceptanceCriteria": [
+        "Global keydown listener for keys 1-9",
+        "Key 1 plays segment from marker 0 to marker 1 (or end)",
+        "Key N plays segment from marker N-1 to marker N (or end)",
+        "Unmapped keys (no corresponding marker) ignored",
+        "Listener ignores events when input/textarea focused",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Add spacebar pause/resume",
+      "description": "As a user, I want to pause and resume playback with the spacebar.",
+      "acceptanceCriteria": [
+        "Spacebar pauses active playback",
+        "Spacebar resumes paused playback from current position",
+        "Spacebar ignored when idle (nothing playing)",
+        "Listener ignores events when input/textarea focused",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Add Escape key to stop playback",
+      "description": "As a user, I want to press Escape to immediately stop playback and reset to idle.",
+      "acceptanceCriteria": [
+        "Escape key stops any active or paused playback immediately",
+        "Playback state resets to idle",
+        "No audio continues after Escape pressed",
+        "Listener ignores events when input/textarea focused",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Show playback progress with waveform fill",
+      "description": "As a user, I want to see playback progress as a fill effect on the waveform.",
+      "acceptanceCriteria": [
+        "During playback, waveform shows fill overlay for active segment",
+        "Fill progresses from segment start to current playback position",
+        "Fill color semi-transparent (e.g., rgba(0, 255, 255, 0.15))",
+        "Fill updates smoothly (~60fps) via requestAnimationFrame",
+        "Only active segment shows fill",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Clear progress on stop or completion",
+      "description": "As a user, I want the progress fill to clear when playback stops or the segment ends.",
+      "acceptanceCriteria": [
+        "Progress fill clears when playback completes (reaches segment end)",
+        "Progress fill clears when Escape pressed",
+        "Progress fill clears when switching to different segment",
+        "Playback state returns to idle on segment completion",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Highlight active marker badge during playback",
+      "description": "As a user, I want to see which marker's segment is currently playing.",
+      "acceptanceCriteria": [
+        "Number badge highlights when its segment is playing",
+        "Highlight style: brighter background or colored border",
+        "Highlight clears when playback stops or switches",
+        "Only one badge highlighted at a time",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

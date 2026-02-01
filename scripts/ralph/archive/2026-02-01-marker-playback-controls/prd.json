@@ -1,0 +1,267 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/section-naming-export",
+  "description": "Section naming and export - Allow naming sections, export individual sections as WAV/MP3, and bulk export all sections as ZIP",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add name field to marker type",
+      "description": "As a developer, I need markers to have a name property so section names can be stored and displayed.",
+      "acceptanceCriteria": [
+        "Add name field (string) to Marker type in src/types/marker.ts",
+        "Update useMarkers hook to generate default name on addMarker: 'Section 1', 'Section 2', etc.",
+        "Default name based on current marker count + 1",
+        "Add updateMarkerName function to useMarkers hook",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Display section names in control strip",
+      "description": "As a user, I want to see section names displayed in the control strip so I can identify each section.",
+      "acceptanceCriteria": [
+        "Section name displayed in MarkerControlStrip for each marker",
+        "Name positioned left of number badge, aligned with marker position",
+        "Font size 12px, neutral-300 color",
+        "Long names truncated with ellipsis (max-width ~80px)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Inline editing of section names",
+      "description": "As a user, I want to click on a section name to edit it inline.",
+      "acceptanceCriteria": [
+        "Clicking section name shows input field replacing text",
+        "Input pre-filled with current name, text selected",
+        "Enter key saves new name via onUpdateMarkerName callback",
+        "Escape key cancels edit, reverts to original",
+        "Blur saves the name",
+        "Empty name reverts to default 'Section N'",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Install export dependencies",
+      "description": "As a developer, I need lamejs and jszip libraries installed for audio encoding and ZIP creation.",
+      "acceptanceCriteria": [
+        "Install lamejs: npm install lamejs",
+        "Install @types/lamejs if available or create declaration",
+        "Install jszip: npm install jszip",
+        "Install file-saver: npm install file-saver",
+        "Install @types/file-saver",
+        "All imports resolve without errors",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Create WAV export utility",
+      "description": "As a developer, I need a utility to encode AudioBuffer segments as WAV files.",
+      "acceptanceCriteria": [
+        "Create src/services/audioExport.ts",
+        "encodeWav(audioBuffer, startTime, endTime) returns Blob",
+        "Correctly extracts samples between start and end times",
+        "Creates valid WAV header with proper sample rate and channels",
+        "Output plays correctly in standard audio players",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create MP3 export utility",
+      "description": "As a developer, I need a utility to encode AudioBuffer segments as MP3 files.",
+      "acceptanceCriteria": [
+        "Add encodeMp3(audioBuffer, startTime, endTime) to audioExport.ts",
+        "Uses lamejs for MP3 encoding",
+        "Encodes at 192kbps quality",
+        "Correctly extracts samples between start and end times",
+        "Returns Blob with audio/mpeg type",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Create filename sanitization utility",
+      "description": "As a developer, I need a utility to sanitize section names for use as filenames.",
+      "acceptanceCriteria": [
+        "Add sanitizeFilename(name) to audioExport.ts",
+        "Removes invalid characters: / \\ : * ? \" < > |",
+        "Replaces spaces with hyphens",
+        "Returns 'section' if result is empty",
+        "Trims whitespace",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Add export button to control strip",
+      "description": "As a user, I want an export button on each section to export individual segments.",
+      "acceptanceCriteria": [
+        "Export button (download icon ↓) in control strip for each marker",
+        "Button positioned after number badge, before close icon",
+        "Hover feedback: pointer cursor, opacity change",
+        "Click opens dropdown with 'WAV' and 'MP3' options",
+        "Dropdown styled dark background, light text",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Export individual section as WAV",
+      "description": "As a user, I want to export a section as a WAV file.",
+      "acceptanceCriteria": [
+        "Selecting WAV from dropdown triggers export",
+        "Uses encodeWav with section boundaries (marker to next marker or end)",
+        "File named: {sanitized-section-name}.wav",
+        "Download triggered via file-saver saveAs",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Export individual section as MP3",
+      "description": "As a user, I want to export a section as an MP3 file.",
+      "acceptanceCriteria": [
+        "Selecting MP3 from dropdown triggers export",
+        "Uses encodeMp3 with section boundaries",
+        "File named: {sanitized-section-name}.mp3",
+        "Download triggered via file-saver saveAs",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Add Export All button to header",
+      "description": "As a user, I want a button to export all sections at once.",
+      "acceptanceCriteria": [
+        "Export All button in header area (near FileLoaderButton)",
+        "Button visible only when audio loaded AND markers exist",
+        "Button text: 'Export All' with download icon",
+        "Click opens dropdown with WAV and MP3 options",
+        "Styled consistently with other header buttons",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Create ZIP export utility",
+      "description": "As a developer, I need a utility to create ZIP archives containing multiple audio files.",
+      "acceptanceCriteria": [
+        "Add createZipArchive(files: {name, blob}[]) to audioExport.ts",
+        "Uses JSZip to create archive",
+        "Returns Blob with application/zip type",
+        "Files added in order provided",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Implement bulk export as ZIP",
+      "description": "As a user, I want to export all sections as a ZIP archive.",
+      "acceptanceCriteria": [
+        "Selecting format from Export All triggers bulk export",
+        "Each section encoded in selected format",
+        "Files ordered chronologically by marker time",
+        "ZIP named: sections-export.zip",
+        "Download triggered via file-saver",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Add export progress state",
+      "description": "As a developer, I need state management for export progress.",
+      "acceptanceCriteria": [
+        "Create useExportProgress hook or add to App state",
+        "Tracks: isExporting, progress (0-100), currentItem, totalItems",
+        "Provides startExport, updateProgress, completeExport functions",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Show export progress indicator",
+      "description": "As a user, I want to see progress during export operations.",
+      "acceptanceCriteria": [
+        "Spinner shown on export button during individual export",
+        "Progress overlay shown during bulk export",
+        "Bulk progress shows 'Exporting X of Y...'",
+        "UI remains interactive during export",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Show export completion toast",
+      "description": "As a user, I want feedback when export completes.",
+      "acceptanceCriteria": [
+        "Toast notification on export success",
+        "Individual: 'Exported {name}.{ext}'",
+        "Bulk: 'Exported {N} sections to ZIP'",
+        "Toast auto-dismisses after 4 seconds",
+        "Toast positioned bottom-right",
+        "Error toast if export fails",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
