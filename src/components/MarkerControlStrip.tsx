@@ -162,6 +162,7 @@ export function MarkerControlStrip({
               top: 0,
               bottom: 0,
               transform: 'translateX(-50%)',
+              cursor: isHovered ? 'ew-resize' : 'default',
             }}
             onMouseEnter={() => setHoveredMarkerId(marker.id)}
             onMouseLeave={() => setHoveredMarkerId(null)}
@@ -198,15 +199,6 @@ export function MarkerControlStrip({
               >
                 ×
               </div>
-            </div>
-            {/* Drag arrows - appear on hover */}
-            <div
-              className={`text-[10px] text-neutral-400 select-none transition-opacity duration-100 ${
-                isHovered ? 'opacity-100' : 'opacity-0'
-              }`}
-              style={{ marginTop: '1px' }}
-            >
-              ◀▶
             </div>
           </div>
         );
