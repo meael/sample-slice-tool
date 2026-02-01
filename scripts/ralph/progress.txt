@@ -1,164 +1,41 @@
 # Ralph Progress Log
-Started: Sun Feb  1 16:04:08 EET 2026
+Started: Sat Feb  1 2026
 
 ## Codebase Patterns
 - Use `import type` for type-only imports (verbatimModuleSyntax is enabled)
-- Utils go in `src/utils/` directory
-- Types go in `src/types/` directory with their own files
-- Use `void` to silence unused parameter warnings when params are required by API but not used
+- Markers are the source of truth - Sections are derived from markers via getSections utility
+- useMarkers hook follows pattern: add action to MarkersActions interface, implement callback with useCallback, include in return object
+- When adding properties to Marker, make optional with `?` for backwards compatibility
+- Section properties are not optional (unlike Marker) - use `boolean` not `boolean?`
+- getSections is the single point where Marker -> Section transformation happens
+- SectionHeader follows pattern: section prop changes -> update start marker via callback -> sections recalculate
+- Button icons use inline SVG for consistency (no external icon library)
+- Color states: cyan (text-cyan-400) for enabled, gray (text-neutral-500) for disabled
+- Toggle buttons use onClick with e.stopPropagation() to prevent waveform interaction
+- Z-index layering: z-10 (waveform) < z-20 (control strip) < z-50 (popovers/context menus)
+- useKeyboardControls receives all sections, filtering happens inside handleKeyDown callback
+- Filtering with `sections.filter(s => s.enabled)` creates dynamic keyboard mapping
+- Keyboard index computation happens in MarkerControlStrip (parent) and is passed down via props
+- SectionHeader uses section.id for callbacks (not marker.id like MarkerControlStrip)
+- Position calculation uses getPixelX helper to convert time to pixel position
+- SectionDropdown component pattern: internal state, click-outside close, z-index 40, items/children props
 
 ---
 
-## 2026-02-01 16:10 - US-001
-- Implemented `getSections(markers, duration)` helper function in `src/utils/sections.ts`
-- Created Section interface with fields: id, startMarker, endMarker, startTime, endTime, name
-- Function returns sections only between consecutive markers (not before first or after last)
-- Single marker returns empty array
-- Files changed: `src/utils/sections.ts` (new file)
+## 2026-02-01 - US-001
+- Implemented SectionDropdown reusable dropdown menu component
+- Files created: src/components/SectionDropdown.tsx
+- **Features:**
+  - Internal open/close state management with useState
+  - Click outside detection via useEffect with mousedown listener
+  - Escape key closes menu
+  - z-index 40 (higher than control strip z-30)
+  - Accepts items prop (SectionDropdownItem[]) or children for custom content
+  - Menu items rendered as text buttons with hover state
+  - stopPropagation on all interactions to prevent waveform interference
 - **Learnings for future iterations:**
-  - This codebase uses `verbatimModuleSyntax`, so type imports must use `import type`
-  - Section name is inherited from `startMarker.name`
-  - Section id format is `section-${startMarker.id}-${endMarker.id}`
+  - Used setTimeout(0) to prevent immediate close from triggering click
+  - Children can be a function receiving closeDropdown callback for custom content
+  - Exported SectionDropdownItem interface for type reuse
 ---
 
-## 2026-02-01 16:20 - US-002
-- Moved Section interface from `src/utils/sections.ts` to dedicated type file `src/types/section.ts`
-- Updated `src/utils/sections.ts` to import and re-export Section from new location
-- Files changed: `src/types/section.ts` (new file), `src/utils/sections.ts` (updated imports)
-- **Learnings for future iterations:**
-  - Types should be in their own files in `src/types/` directory
-  - Can re-export types from utils for convenience: `export type { Section } from '../types/section'`
-  - Section type can be imported from either `src/types/section.ts` or `src/utils/sections.ts`
----
-
-## 2026-02-01 16:35 - US-003
-- Added `sections` prop to `WaveformCanvas` component interface
-- Modified `drawWaveform` to render inactive areas (before first marker, after last marker) in grayscale
-- Grayscale color calculated using luminance formula: `0.299*R + 0.587*G + 0.114*B`
-- When no sections exist (backwards compatibility), entire waveform renders in normal color
-- Updated `App.tsx` to calculate sections using `getSections` (via `useMemo`) and pass to `WaveformCanvas`
-- Files changed: `src/components/WaveformCanvas.tsx`, `src/App.tsx`
-- **Learnings for future iterations:**
-  - Use `useMemo` to memoize expensive calculations like `getSections(markers, audioDuration)`
-  - The waveform color is a hex string (e.g., `#22d3ee`), parse with regex to extract RGB
-  - Grayscale rendering: convert RGB to single gray value using perceptual luminance weights
-  - When modifying canvas drawing, ensure variables like `rangeStart` are not declared twice
----
-
-## 2026-02-01 17:10 - US-005
-- Removed keyboard number badges (1-9) from MarkerControlStrip component
-- Removed `isMarkerActive` helper function (was only used for badge highlighting)
-- Removed unused props from interface: `playbackState`, `playbackSegmentStart`, `playbackSegmentEnd`
-- Removed unused `PlaybackState` type import
-- Updated App.tsx to remove the now-unused props when rendering MarkerControlStrip
-- Control strip still shows: section name (editable), export dropdown, delete button
-- Files changed: `src/components/MarkerControlStrip.tsx`, `src/App.tsx`
-- **Learnings for future iterations:**
-  - When removing features, also clean up related helper functions and props that become unused
-  - The MarkerControlStrip is positioned above the waveform with controls centered on each marker position
-  - Number badges were used for keyboard shortcuts, but now keyboard plays sections (between markers) not marker-based ranges
----
-
-## 2026-02-01 17:45 - US-006
-- Created SectionHeader component in `src/components/SectionHeader.tsx`
-- Component receives: section, sectionIndex, containerWidth, visibleRange, duration, onUpdateName, onExport, isExporting props
-- Displays section name (editable) and export button as a grouped unit
-- Positioned horizontally centered between section start and end markers using `(startX + endX) / 2`
-- Export button immediately right of name with gap-1 (4px gap via Tailwind)
-- Includes EditableName subcomponent for inline name editing
-- Includes ExportDropdown subcomponent for WAV/MP3 export options
-- Files changed: `src/components/SectionHeader.tsx` (new file)
-- **Learnings for future iterations:**
-  - SectionHeader uses section.id for callbacks (not marker.id like MarkerControlStrip)
-  - Position calculation uses `getPixelX` helper to convert time to pixel position
-  - Center position = (startX + endX) / 2, then transform: translate(-50%, -50%) to center the element
-  - Subcomponents (EditableName, ExportDropdown) can be copied/adapted from MarkerControlStrip
----
-
-## 2026-02-01 18:15 - US-007
-- Integrated SectionHeader component into MarkerControlStrip
-- MarkerControlStrip now renders section headers centered between markers AND delete icons above markers
-- Removed duplicated EditableName and ExportDropdown components from MarkerControlStrip (using SectionHeader's versions)
-- Updated MarkerControlStrip props: added `sections`, replaced marker-based export with section-based export
-- Updated App.tsx to pass sections to MarkerControlStrip and handle section-based export/rename
-- Added `handleUpdateSectionName` callback that updates section's start marker name
-- Added `handleExportSection` callback that uses section start/end times for export
-- Files changed: `src/components/MarkerControlStrip.tsx`, `src/App.tsx`
-- **Learnings for future iterations:**
-  - Section name is stored on the start marker, so updating section name means updating startMarker.name
-  - Section export uses section.startTime and section.endTime directly
-  - MarkerControlStrip now has a clear separation: delete icons on markers, section headers between markers
-  - Use `isSectionVisible` to check if section overlaps with visible range (partial visibility counts)
----
-
-## 2026-02-01 18:45 - US-008
-- Implemented name truncation with available space calculation in SectionHeader component
-- Added constants for layout: EXPORT_BUTTON_WIDTH (16px), GAP_WIDTH (4px), PADDING (8px), MIN_NAME_WIDTH (40px)
-- Available width formula: `sectionWidth - exportButtonSpace - PADDING * 2`
-- Name hidden completely if available space < 40px (only export button shown)
-- Name truncated with CSS `truncate` class (ellipsis) when wider than available space
-- Added `isTruncated` state tracked via `scrollWidth > clientWidth` comparison
-- EditableName now receives `maxWidth` and `onTruncatedChange` props
-- Input width constrained to 60-150px range for usability
-- Files changed: `src/components/SectionHeader.tsx`
-- **Learnings for future iterations:**
-  - Truncation detected by comparing `scrollWidth > clientWidth` on the text element
-  - Use `useRef` to get DOM element for measuring truncation
-  - The `isTruncated` state is prepared for US-009 popover feature
-  - `void isTruncated` used to silence unused variable warning (needed for future popover)
----
-
-## 2026-02-01 19:15 - US-009
-- Added popover for editing truncated section names in SectionHeader component
-- Popover opens when clicking a truncated name; non-truncated names continue to use inline editing
-- Popover positioned below the name using `position: absolute; top: full; mt-1`
-- Popover has `z-50` to appear above other elements
-- Input is pre-filled with full name and text auto-selected on focus
-- Enter saves, Escape cancels, blur saves (same behavior as inline editing)
-- Added `isTruncated` prop to EditableName to control editing mode
-- Files changed: `src/components/SectionHeader.tsx`
-- **Learnings for future iterations:**
-  - Use `isTruncated` from parent state to decide between popover and inline editing
-  - Popover pattern: wrap in relative container, position child absolute with `top-full`
-  - Always use `z-50` for popovers to ensure they appear above other UI elements
-  - Keep the truncated text visible behind the popover so user knows what they're editing
----
-
-## 2026-02-01 19:45 - US-010
-- Added explicit z-index values to fix layering issues between control strip and waveform
-- MarkerControlStrip now has `z-20` class to ensure it's above waveform
-- WaveformCanvas container now has `z-10` class for lower z-index than control strip
-- Popovers and ContextMenu already had `z-50` (highest priority)
-- Files changed: `src/components/MarkerControlStrip.tsx`, `src/components/WaveformCanvas.tsx`
-- **Learnings for future iterations:**
-  - Z-index layering: `z-10` (waveform) < `z-20` (control strip) < `z-50` (popovers/context menus)
-  - Tailwind z-index classes: z-10, z-20, z-30, z-40, z-50 are available
-  - Explicit z-index prevents click event interception issues between overlapping elements
----
-
-## 2026-02-01 20:15 - US-011
-- Updated `handleExportAll` in App.tsx to iterate over `sections` array instead of `markers`
-- Bulk export now uses `section.startTime` and `section.endTime` directly
-- Changed ExportAllButton visibility from `markers.length > 0` to `sections.length > 0`
-- Export All button only shows when valid sections exist (not just when markers exist)
-- Individual export was already correct (from US-007) using section boundaries
-- Files changed: `src/App.tsx`
-- **Learnings for future iterations:**
-  - Sections array is derived from markers via `getSections(markers, audioDuration)` in useMemo
-  - A single marker creates no sections; need at least 2 markers for 1 section
-  - Always use sections for export operations to ensure only valid ranges (between markers) are exported
-  - The dependency array in useCallback was simplified: removed `markers`, `audioDuration` since they're captured through `sections`
----
-
-## 2026-02-01 21:00 - US-012
-- Updated playback progress fill in WaveformCanvas to respect section boundaries
-- Fill now only appears within the active section that contains the playback segment
-- Added logic to find the section containing `playbackSegmentStart` and `playbackSegmentEnd`
-- Fill bounded by section start/end times, preventing extension into inactive (grayscale) areas
-- If playback is outside a valid section, no fill is drawn
-- Files changed: `src/components/WaveformCanvas.tsx`
-- **Learnings for future iterations:**
-  - Playback fill uses `sections.find()` to locate the section containing the playback segment
-  - The fill region is clamped to both the active section boundaries and the visible range
-  - This completes the section-based playback feature started in US-004
----
