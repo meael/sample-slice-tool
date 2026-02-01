@@ -15,13 +15,15 @@ export interface SectionDropdownProps {
   children?: ReactNode;
   /** Optional trigger element (defaults to a dropdown arrow) */
   trigger?: ReactNode;
+  /** Optional header text displayed at the top of the menu */
+  header?: string;
 }
 
 /**
  * A dropdown menu component for section actions
  * Manages open/close state internally, closes when clicking outside
  */
-export function SectionDropdown({ items, children, trigger }: SectionDropdownProps) {
+export function SectionDropdown({ items, children, trigger, header }: SectionDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -95,6 +97,12 @@ export function SectionDropdown({ items, children, trigger }: SectionDropdownPro
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
         >
+          {/* Render header if provided */}
+          {header && (
+            <div className="px-3 py-1.5 text-neutral-400 text-xs border-b border-neutral-700">
+              {header}
+            </div>
+          )}
           {/* Render items if provided */}
           {items?.map((item, index) => (
             <div

@@ -1,7 +1,8 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { Section } from '../types/section';
 import type { VisibleRange } from '../types/zoom';
 import { SectionDropdown } from './SectionDropdown';
+import type { SectionDropdownItem } from './SectionDropdown';
 
 export type ExportFormat = 'wav' | 'mp3';
 
@@ -201,11 +202,10 @@ export function SectionHeader({
   visibleRange,
   duration,
   onUpdateName,
-  // These props will be used in US-003 when implementing dropdown menu content
-  onExport: _onExport,
-  isExporting: _isExporting,
-  onToggleEnabled: _onToggleEnabled,
-  keyboardIndex: _keyboardIndex,
+  onExport,
+  isExporting,
+  onToggleEnabled,
+  keyboardIndex,
 }: SectionHeaderProps) {
   // Track whether the name is truncated (for future popover feature)
   const [isTruncated, setIsTruncated] = useState(false);
@@ -249,6 +249,36 @@ export function SectionHeader({
   // Determine if section is disabled for styling
   const isDisabled = !section.enabled;
 
+  // Build dropdown menu items
+  const dropdownItems = useMemo<SectionDropdownItem[]>(() => {
+    const items: SectionDropdownItem[] = [];
+
+    // Download action
+    if (onExport) {
+      items.push({
+        label: isExporting ? 'Exporting...' : 'Download',
+        onClick: () => {
+          if (!isExporting) {
+            onExport(section.id, 'wav');
+          }
+        },
+      });
+    }
+
+    // Enable/Disable toggle action
+    if (onToggleEnabled) {
+      items.push({
+        label: section.enabled ? 'Disable' : 'Enable',
+        onClick: () => onToggleEnabled(section.id),
+      });
+    }
+
+    return items;
+  }, [section.id, section.enabled, onExport, onToggleEnabled, isExporting]);
+
+  // Header text shows keyboard shortcut if available
+  const dropdownHeader = keyboardIndex !== undefined ? `Shortcut: ${keyboardIndex}` : undefined;
+
   return (
     <div
       className={`absolute flex items-center gap-1 transition-opacity ${isDisabled ? 'opacity-50' : ''}`}
@@ -284,7 +314,7 @@ export function SectionHeader({
         )
       )}
       {/* Dropdown arrow for section actions menu */}
-      <SectionDropdown items={[]} />
+      <SectionDropdown items={dropdownItems} header={dropdownHeader} />
     </div>
   );
 }
