@@ -86,6 +86,9 @@ export function WaveformCanvas({
     markerId: string;
   } | null>(null);
 
+  // Preview marker state - tracks hover time for visual preview
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+
   /**
    * Draw the waveform on the canvas
    */
@@ -211,7 +214,22 @@ export function WaveformCanvas({
         ctx.stroke();
       }
     }
-  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor]);
+
+    // Draw preview marker (semi-transparent) when hovering
+    if (hoverTime !== null && hoverTime >= rangeStart && hoverTime <= rangeEnd) {
+      const fraction = (hoverTime - rangeStart) / rangeDuration;
+      const x = Math.round(fraction * width);
+
+      // Use same color as placed markers but with 50% opacity
+      ctx.strokeStyle = markerColor + '80'; // 80 = 50% in hex
+      ctx.lineWidth = 1;
+
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvasHeight);
+      ctx.stroke();
+    }
+  }, [peaks, visibleRange, height, waveformColor, backgroundColor, markers, markerColor, selectedMarkerId, selectedMarkerColor, hoverTime]);
 
   // Draw on mount and when dependencies change
   useEffect(() => {
@@ -310,6 +328,36 @@ export function WaveformCanvas({
     },
     [markers, timeToPixel]
   );
+
+  /**
+   * Handle mouse move over container to update preview marker position
+   */
+  const handleContainerMouseMove = useCallback(
+    (event: React.MouseEvent) => {
+      // Don't update preview while dragging
+      if (isDraggingRef.current || isDraggingMarkerRef.current) return;
+
+      // Hide preview if hovering near an existing marker (within hit threshold)
+      const nearbyMarkerId = findMarkerAtPixel(event.clientX);
+      if (nearbyMarkerId) {
+        setHoverTime(null);
+        return;
+      }
+
+      const time = pixelToTime(event.clientX);
+      // Clamp to valid range
+      const clampedTime = Math.max(0, Math.min(time, peaks.duration));
+      setHoverTime(clampedTime);
+    },
+    [pixelToTime, peaks.duration, findMarkerAtPixel]
+  );
+
+  /**
+   * Handle mouse leave to hide preview marker
+   */
+  const handleContainerMouseLeave = useCallback(() => {
+    setHoverTime(null);
+  }, []);
 
   /**
    * Handle mouse down for drag-to-pan, marker drag, or click-to-add-marker
@@ -573,6 +621,8 @@ export function WaveformCanvas({
         className="w-full flex items-center justify-center"
         style={{ cursor: onPan ? 'grab' : 'default' }}
         onMouseDown={handleMouseDown}
+        onMouseMove={handleContainerMouseMove}
+        onMouseLeave={handleContainerMouseLeave}
         onContextMenu={handleContextMenu}
       >
         <canvas
