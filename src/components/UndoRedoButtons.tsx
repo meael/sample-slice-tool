@@ -1,3 +1,5 @@
+import { Undo2, Redo2, RotateCcw } from 'lucide-react';
+
 export interface UndoRedoButtonsProps {
   /** Whether undo is available */
   canUndo: boolean;
@@ -40,7 +42,7 @@ export function UndoRedoButtons({
         title="Undo (Cmd/Ctrl+Z)"
         aria-label="Undo"
       >
-        <span aria-hidden="true">↶</span>
+        <Undo2 className="w-4 h-4" />
       </button>
 
       {/* Redo button */}
@@ -52,7 +54,7 @@ export function UndoRedoButtons({
         title="Redo (Cmd/Ctrl+Shift+Z)"
         aria-label="Redo"
       >
-        <span aria-hidden="true">↷</span>
+        <Redo2 className="w-4 h-4" />
       </button>
 
       {/* Reset button */}
@@ -64,7 +66,7 @@ export function UndoRedoButtons({
         title="Reset all markers"
         aria-label="Reset"
       >
-        <span aria-hidden="true">⟲</span>
+        <RotateCcw className="w-4 h-4" />
       </button>
     </div>
   );
