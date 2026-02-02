@@ -100,6 +100,17 @@ for i in $(seq 1 $MAX_ITERATIONS); do
     echo ""
     echo "Ralph completed all tasks!"
     echo "Completed at iteration $i of $MAX_ITERATIONS"
+
+    # Merge feature branch into main
+    FEATURE_BRANCH=$(jq -r '.branchName // empty' "$PRD_FILE" 2>/dev/null || echo "")
+    if [ -n "$FEATURE_BRANCH" ]; then
+      echo ""
+      echo "Merging $FEATURE_BRANCH into main..."
+      git checkout main 2>/dev/null || git checkout -b main
+      git merge "$FEATURE_BRANCH" --no-edit
+      echo "Successfully merged $FEATURE_BRANCH into main"
+    fi
+
     exit 0
   fi
   

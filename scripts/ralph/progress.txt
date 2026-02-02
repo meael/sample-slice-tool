@@ -1,48 +1,22 @@
 # Ralph Progress Log
-Started: Mon Feb  2 21:01:44 EET 2026
-
-## Codebase Patterns
-- Context-aware components: Use conditional rendering with fixed-height container to prevent layout shifts
-- Test audio files: Available at node_modules/lamejs/testdata/*.wav
-- Type imports: When refactoring component usage, check for type-only imports that may need updating
+Started: Mon Feb  2 21:13:53 EET 2026
 ---
 
 ## 2026-02-02 - US-001
-- Created EditorToolbar component with center-aligned editing controls
-- Files changed: src/components/EditorToolbar.tsx (new)
+- Added `mb-4` (16px) bottom margin to EditorToolbar container
+- Files changed: `src/components/EditorToolbar.tsx`
 - **Learnings for future iterations:**
-  - UndoRedoButtons already has hasMarkers prop for Reset button state
-  - ExportAllButton takes onExportAll callback with ExportAllFormat type
-  - Use h-10 class for 40px fixed height to prevent layout shifts
+  - EditorToolbar uses a fixed height (`h-10`) outer div to prevent layout shifts
+  - The margin is on the outer div, so spacing applies whether controls are visible or hidden
+  - Toolbar controls are conditionally rendered based on `hasMarkers` prop
 ---
 
 ## 2026-02-02 - US-002
-- Context-aware visibility already implemented in EditorToolbar component from US-001
-- Conditional rendering: controls only shown when hasMarkers is true
-- Fixed h-10 container always renders to prevent layout shifts
-- No animation - instant show/hide via conditional rendering
+- Added Upload icon from lucide-react to FileLoaderButton
+- Added `flex items-center gap-1.5` to button for proper icon/text alignment
+- Files changed: `src/components/FileLoaderButton.tsx`
 - **Learnings for future iterations:**
-  - React conditional rendering (`{condition && <Component />}`) provides instant show/hide without animations
-  - Browser verification should be bundled with integration story
----
-
-## 2026-02-02 - US-003
-- Integrated EditorToolbar into App.tsx above the waveform
-- Removed UndoRedoButtons and ExportAllButton from header
-- Added ExportAllFormat type import from ExportAllButton (handleExportAll still needs it)
-- Files changed: src/App.tsx
-- Browser verified: toolbar appears when markers added, disappears on reset
-- **Learnings for future iterations:**
-  - When moving components, check for type imports that may need to be added/updated
-  - Test audio file available at node_modules/lamejs/testdata/Stereo44100.wav
----
-
-## 2026-02-02 - US-004
-- Verified only one instance of UndoRedoButtons (in EditorToolbar)
-- Verified only one instance of ExportAllButton (in EditorToolbar)
-- No unused imports in App.tsx
-- Typecheck and lint pass
-- Browser verification done in US-003 - layout is clean
-- **Learnings for future iterations:**
-  - Use grep to verify component usage counts across codebase
+  - FileLoaderButton is a subtle button shown after waveform is loaded (top-left corner)
+  - lucide-react icons work well at `w-4 h-4` size for small buttons
+  - Use `gap-1.5` for icon-to-text spacing in compact buttons
 ---
