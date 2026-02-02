@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { Check, AlertCircle, X } from 'lucide-react';
 
 export type ToastType = 'success' | 'error';
 
@@ -26,9 +27,9 @@ export function Toast({ message, type, onDismiss, autoDismissMs = 4000 }: ToastP
     >
       <div className="flex items-center gap-2">
         {type === 'success' ? (
-          <span className="text-lg">✓</span>
+          <Check className="w-4 h-4" />
         ) : (
-          <span className="text-lg">✕</span>
+          <AlertCircle className="w-4 h-4" />
         )}
         <span className="text-sm">{message}</span>
         <button
@@ -36,7 +37,7 @@ export function Toast({ message, type, onDismiss, autoDismissMs = 4000 }: ToastP
           className="ml-2 opacity-70 hover:opacity-100"
           aria-label="Dismiss"
         >
-          ×
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>
