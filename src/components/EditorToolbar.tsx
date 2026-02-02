@@ -38,7 +38,7 @@ export function EditorToolbar({
   disabled = false,
 }: EditorToolbarProps) {
   return (
-    <div className="h-10 flex justify-center items-center">
+    <div className="h-10 flex justify-center items-center mb-4">
       {hasMarkers && (
         <div className="flex items-center gap-2">
           <UndoRedoButtons
