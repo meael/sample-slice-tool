@@ -111,6 +111,23 @@ for i in $(seq 1 $MAX_ITERATIONS); do
       echo "Successfully merged $FEATURE_BRANCH into main"
     fi
 
+    # Commit Ralph docs (progress, prd, archives, task PRDs)
+    echo ""
+    echo "Committing Ralph documentation..."
+    git add "$SCRIPT_DIR/progress.txt" "$SCRIPT_DIR/prd.json" "$SCRIPT_DIR/.last-branch" 2>/dev/null || true
+    git add "$SCRIPT_DIR/archive/" 2>/dev/null || true
+    git add "$(dirname "$SCRIPT_DIR")/$(dirname "$SCRIPT_DIR")/../tasks/prd-"*.md 2>/dev/null || true
+    # Use repo root for tasks
+    REPO_ROOT=$(git rev-parse --show-toplevel)
+    git add "$REPO_ROOT/tasks/prd-"*.md 2>/dev/null || true
+
+    if git diff --cached --quiet; then
+      echo "No Ralph docs to commit"
+    else
+      git commit -m "update ralph docs"
+      echo "Ralph docs committed"
+    fi
+
     exit 0
   fi
   

@@ -91,15 +91,10 @@ If no browser tools are available, note in your progress report that manual brow
 
 After completing a user story, check if ALL stories have `passes: true`.
 
-If ALL stories are complete and passing:
-1. Stage and commit all Ralph documentation files (including untracked):
-   ```bash
-   git add scripts/ralph/progress.txt scripts/ralph/prd.json scripts/ralph/.last-branch
-   git add scripts/ralph/archive/ 2>/dev/null || true
-   git add tasks/prd-*.md 2>/dev/null || true
-   git commit -m "update ralph docs"
-   ```
-2. Then reply with: <promise>COMPLETE</promise>
+If ALL stories are complete and passing, reply with:
+<promise>COMPLETE</promise>
+
+The ralph.sh script will automatically commit all documentation files after completion.
 
 If there are still stories with `passes: false`, end your response normally (another iteration will pick up the next story).
 
