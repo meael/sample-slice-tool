@@ -1,0 +1,11 @@
+# Ralph Progress Log
+Started: Mon Feb  2 22:00:00 EET 2026
+
+## Codebase Patterns
+- Context-aware components: Use conditional rendering with fixed-height container to prevent layout shifts
+- Test audio files: Available at node_modules/lamejs/testdata/*.wav
+- Type imports: When refactoring component usage, check for type-only imports that may need updating
+- Lucide icons: Use w-4 h-4 for toolbar icons, import from lucide-react
+- Keyboard handling: useKeyboardControls hook in src/hooks/, MarkerControlStrip shows key labels
+---
+
