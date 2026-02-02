@@ -1,4 +1,5 @@
 import { useRef, useCallback, type ChangeEvent } from 'react';
+import { Upload } from 'lucide-react';
 import { SUPPORTED_AUDIO_FORMATS, SUPPORTED_EXTENSIONS } from '../types/audio';
 
 /**
@@ -72,9 +73,10 @@ export function FileLoaderButton({ onFileSelected }: FileLoaderButtonProps) {
       <button
         type="button"
         onClick={handleClick}
-        className="px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 transition-colors tracking-wide"
+        className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 transition-colors tracking-wide"
         title="Load new file"
       >
+        <Upload className="w-4 h-4" />
         Load file
       </button>
     </>
