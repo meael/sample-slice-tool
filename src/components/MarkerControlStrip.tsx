@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { X } from 'lucide-react';
 import type { Marker } from '../types/marker';
 import type { Section } from '../types/section';
 import type { VisibleRange } from '../types/zoom';
@@ -232,7 +233,7 @@ export function MarkerControlStrip({
                     }}
                     title="Delete marker"
                   >
-                    ×
+                    <X className="w-3 h-3" />
                   </div>
                 </>
               ) : (
@@ -251,7 +252,7 @@ export function MarkerControlStrip({
                   }}
                   title="Delete marker"
                 >
-                  ×
+                  <X className="w-3 h-3" />
                 </div>
               )}
             </div>
