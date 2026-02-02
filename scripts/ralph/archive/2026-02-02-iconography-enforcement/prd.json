@@ -1,0 +1,102 @@
+{
+  "project": "Audio Slice Tool",
+  "branchName": "ralph/iconography-enforcement",
+  "description": "Iconography Enforcement - Replace all Unicode icons with Lucide React SVG icons",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Install Lucide React icon library",
+      "description": "As a developer, I need the Lucide React library installed to use consistent SVG icons.",
+      "acceptanceCriteria": [
+        "Run npm install lucide-react",
+        "Verify lucide-react is added to package.json dependencies",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "lucide-react was already installed (^0.563.0)"
+    },
+    {
+      "id": "US-002",
+      "title": "Replace undo/redo/reset Unicode with Lucide icons",
+      "description": "As a user, I want the undo/redo/reset buttons to use proper SVG icons.",
+      "acceptanceCriteria": [
+        "Import Undo2, Redo2, RotateCcw from lucide-react in UndoRedoButtons.tsx",
+        "Replace <span aria-hidden=\"true\">↶</span> with <Undo2 className=\"w-4 h-4\" />",
+        "Replace <span aria-hidden=\"true\">↷</span> with <Redo2 className=\"w-4 h-4\" />",
+        "Replace <span aria-hidden=\"true\">⟲</span> with <RotateCcw className=\"w-4 h-4\" />",
+        "Icons inherit text color via currentColor",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "All three icons replaced and verified in browser"
+    },
+    {
+      "id": "US-003",
+      "title": "Replace Toast Unicode with Lucide icons",
+      "description": "As a user, I want toast notifications to use proper SVG icons.",
+      "acceptanceCriteria": [
+        "Import Check, AlertCircle, X from lucide-react in Toast.tsx",
+        "Replace <span className=\"text-lg\">✓</span> with <Check className=\"w-4 h-4\" />",
+        "Replace <span className=\"text-lg\">✕</span> with <AlertCircle className=\"w-4 h-4\" />",
+        "Replace × close button text with <X className=\"w-4 h-4\" />",
+        "Icons inherit colors from parent elements",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Replace dropdown chevron Unicode with Lucide icon",
+      "description": "As a user, I want dropdown indicators to use a proper SVG chevron icon.",
+      "acceptanceCriteria": [
+        "Import ChevronDown from lucide-react in SectionDropdown.tsx",
+        "Replace <span className=\"text-xs\" style={{ fontSize: 10 }}>▼</span> with <ChevronDown className=\"w-3 h-3\" />",
+        "Remove the inline fontSize style",
+        "Icon inherits text color from parent",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Replace delete marker Unicode with Lucide icon",
+      "description": "As a user, I want the marker delete buttons to use a proper SVG X icon.",
+      "acceptanceCriteria": [
+        "Import X from lucide-react in MarkerControlStrip.tsx",
+        "Replace first × character (hover close icon around line 235) with <X className=\"w-3 h-3\" />",
+        "Replace second × character (always-visible close around line 254) with <X className=\"w-3 h-3\" />",
+        "Icons inherit text color and hover states from parent",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Audit and verify no Unicode icons remain",
+      "description": "As a developer, I need to verify that no Unicode characters are used as UI icons.",
+      "acceptanceCriteria": [
+        "Run grep search for Unicode icon characters in .tsx files",
+        "Confirm no matches for: × ↶ ↷ ⟲ ▼ ✓ ✕ in interactive controls",
+        "Any remaining Unicode is only in comments or plain text content",
+        "All interactive icons render via Lucide React components",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+# Progress Log - Context-Aware Toolbar v2
+
+## Codebase Patterns
+- HARD RULE: No Unicode characters as UI icons - use Lucide React only
+- Lucide icons: `className="w-4 h-4"` (16px) or `w-3 h-3` (12px)
+- Icons inherit currentColor for text color
+- Dark theme: bg-neutral-900 base, bg-neutral-800 for controls
+- Toolbar: h-10 fixed height, no background, center-aligned controls
+- Conditional rendering: show controls only when `hasMarkers` is true
+
+---
+

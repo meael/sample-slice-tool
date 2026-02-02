@@ -1,79 +1,48 @@
 # Ralph Progress Log
-Started: Sun Feb  1 21:46:44 EET 2026
----
+Started: Mon Feb  2 21:01:44 EET 2026
 
 ## Codebase Patterns
-- Vite config uses function form `defineConfig(({ mode }) => ({...}))` to access build mode for conditional configuration
-- GitHub Pages deployment requires base path matching repository name
-- GitHub Actions workflows go in `.github/workflows/` directory
-- lucide-react is already installed (^0.563.0) - import icons directly with `import { IconName } from 'lucide-react'`
-
+- Context-aware components: Use conditional rendering with fixed-height container to prevent layout shifts
+- Test audio files: Available at node_modules/lamejs/testdata/*.wav
+- Type imports: When refactoring component usage, check for type-only imports that may need updating
 ---
 
-## 2026-02-01 21:47 - US-001
-- Implemented: Configure Vite base path for GitHub Pages
-- Files changed: vite.config.ts
-- Changes:
-  - Updated defineConfig to use function form to access `mode`
-  - Set `base: '/sample-slice-tool/'` for production builds
-  - Development mode keeps base path as `/` for local development
+## 2026-02-02 - US-001
+- Created EditorToolbar component with center-aligned editing controls
+- Files changed: src/components/EditorToolbar.tsx (new)
 - **Learnings for future iterations:**
-  - Vite's defineConfig can take a function that receives `{ mode, command }` for conditional config
-  - GitHub Pages serves from `/<repo-name>/` subdirectory, so assets need that base path
-  - Build verification: check dist/index.html for correct asset prefixes
+  - UndoRedoButtons already has hasMarkers prop for Reset button state
+  - ExportAllButton takes onExportAll callback with ExportAllFormat type
+  - Use h-10 class for 40px fixed height to prevent layout shifts
 ---
 
-## 2026-02-01 21:50 - US-002
-- Implemented: Add GitHub Actions workflow for deployment
-- Files changed: .github/workflows/deploy.yml (created)
-- Changes:
-  - Created workflow that triggers on push to main branch
-  - Uses Node.js 20 with npm caching for faster builds
-  - Runs npm ci and npm run build
-  - Uses GitHub Pages actions: configure-pages, upload-pages-artifact, deploy-pages
-  - Set proper permissions: pages: write, id-token: write, contents: read
-  - Added concurrency settings to prevent overlapping deployments
+## 2026-02-02 - US-002
+- Context-aware visibility already implemented in EditorToolbar component from US-001
+- Conditional rendering: controls only shown when hasMarkers is true
+- Fixed h-10 container always renders to prevent layout shifts
+- No animation - instant show/hide via conditional rendering
 - **Learnings for future iterations:**
-  - GitHub Pages deployment workflows need two jobs: build and deploy (deploy depends on build)
-  - The upload-pages-artifact action needs `path` pointing to the build output directory (./dist for Vite)
-  - Required permissions: `pages: write`, `id-token: write` for OIDC token, `contents: read` for checkout
-  - Use `cancel-in-progress: false` for deployment concurrency to prevent partial deployments
+  - React conditional rendering (`{condition && <Component />}`) provides instant show/hide without animations
+  - Browser verification should be bundled with integration story
 ---
 
-## 2026-02-01 22:15 - US-003
-- Implemented: Create main branch from current state
-- Files changed: None (git branch operation only)
-- Changes:
-  - Updated main branch to point to current HEAD using `git branch -f main HEAD`
-  - Main branch now contains all features including the GitHub Pages deployment commits
-  - Verified with `git branch --list main` that branch exists
+## 2026-02-02 - US-003
+- Integrated EditorToolbar into App.tsx above the waveform
+- Removed UndoRedoButtons and ExportAllButton from header
+- Added ExportAllFormat type import from ExportAllButton (handleExportAll still needs it)
+- Files changed: src/App.tsx
+- Browser verified: toolbar appears when markers added, disappears on reset
 - **Learnings for future iterations:**
-  - Use `git branch -f <branch> <commit>` to force-update an existing branch to a new commit
-  - Branch operations don't create commits - they just move the branch reference pointer
-  - For deployment workflows that trigger on push to main, ensure main branch is up to date before pushing
+  - When moving components, check for type imports that may need to be added/updated
+  - Test audio file available at node_modules/lamejs/testdata/Stereo44100.wav
 ---
 
-## 2026-02-02 - US-001 (Iconography Enforcement)
-- **Story**: Install Lucide React icon library
-- **What was implemented**: Verified lucide-react is already installed
-- **Files changed**: None (library was pre-existing)
+## 2026-02-02 - US-004
+- Verified only one instance of UndoRedoButtons (in EditorToolbar)
+- Verified only one instance of ExportAllButton (in EditorToolbar)
+- No unused imports in App.tsx
+- Typecheck and lint pass
+- Browser verification done in US-003 - layout is clean
 - **Learnings for future iterations:**
-  - lucide-react version ^0.563.0 is already a dependency in this project
-  - No installation needed, can proceed directly to using Lucide icons
-  - Import syntax: `import { IconName } from 'lucide-react'`
----
-
-## 2026-02-02 - US-002 (Iconography Enforcement)
-- **Story**: Replace undo/redo/reset Unicode with Lucide icons
-- **What was implemented**: Replaced Unicode characters with Lucide React SVG icons
-- **Files changed**: src/components/UndoRedoButtons.tsx
-- **Changes**:
-  - Added import for Undo2, Redo2, RotateCcw from lucide-react
-  - Replaced `<span aria-hidden="true">↶</span>` with `<Undo2 className="w-4 h-4" />`
-  - Replaced `<span aria-hidden="true">↷</span>` with `<Redo2 className="w-4 h-4" />`
-  - Replaced `<span aria-hidden="true">⟲</span>` with `<RotateCcw className="w-4 h-4" />`
-- **Learnings for future iterations:**
-  - Lucide icons inherit color via `currentColor` automatically, so they work with Tailwind text color classes
-  - Use `w-4 h-4` for consistent 16px icon sizing in button contexts
-  - Icons must be loaded into the app with an audio file to see the undo/redo/reset buttons (they appear in toolbar after file load)
+  - Use grep to verify component usage counts across codebase
 ---
