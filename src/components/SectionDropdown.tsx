@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { ChevronDown } from 'lucide-react';
 
 export interface SectionDropdownItem {
   /** Label text for the menu item */
@@ -80,7 +81,7 @@ export function SectionDropdown({ items, children, trigger, header }: SectionDro
         onMouseDown={(e) => e.stopPropagation()}
       >
         {trigger ?? (
-          <span className="text-xs" style={{ fontSize: 10 }}>▼</span>
+          <ChevronDown className="w-3 h-3" />
         )}
       </div>
 
