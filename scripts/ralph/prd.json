@@ -1,17 +1,19 @@
 {
   "project": "Audio Slice Tool",
-  "branchName": "ralph/toolbar-spacing-icon",
-  "description": "Toolbar Spacing & Load File Icon - Add bottom margin to toolbar and Upload icon to Load file button",
+  "branchName": "ralph/extended-keyboard-mapping",
+  "description": "Extended Keyboard Mapping - Support 36 keys (digits + letters) for section playback shortcuts",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Add bottom spacing to EditorToolbar",
-      "description": "As a user, I want more visual separation between the toolbar and waveform so the layout feels less cramped.",
+      "title": "Create shared KEY_ORDER constant",
+      "description": "As a developer, I need a centralized key order constant so keyboard mapping is consistent across components.",
       "acceptanceCriteria": [
-        "Add mb-4 (16px) bottom margin to EditorToolbar container",
-        "Spacing applies whether controls are visible or hidden",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Create src/constants/keyboardMapping.ts",
+        "Export KEY_ORDER = '1234567890qwertyuiopasdfghjklzxcvbnm'",
+        "Export getKeyForIndex(index: number): string | undefined - returns key at index",
+        "Export getIndexForKey(key: string): number - returns index or -1 if not found",
+        "Key matching is case-insensitive (normalize to lowercase)",
+        "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
@@ -19,18 +21,68 @@
     },
     {
       "id": "US-002",
-      "title": "Add Upload icon to Load file button",
-      "description": "As a user, I want the Load file button to have an icon so it matches the visual style of other buttons.",
+      "title": "Update useKeyboardControls to handle extended keys",
+      "description": "As a user, I want to press letter keys to trigger sections beyond the first 9.",
       "acceptanceCriteria": [
-        "Import Upload icon from lucide-react",
-        "Add Upload icon (w-4 h-4) to FileLoaderButton",
-        "Icon positioned left of text with appropriate gap (gap-1.5)",
-        "Typecheck passes",
-        "Verify in browser using dev-browser skill"
+        "Import KEY_ORDER and getIndexForKey from src/constants/keyboardMapping",
+        "Replace key >= '1' && key <= '9' check with KEY_ORDER.includes(key.toLowerCase())",
+        "Use getIndexForKey() to find section index from pressed key",
+        "Change onSectionKeyPressed callback type from (keyboardIndex: number) to (keyboardKey: string)",
+        "Pass the actual key character (lowercase) to onSectionKeyPressed",
+        "Typecheck passes"
       ],
       "priority": 2,
       "passes": true,
       "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Update MarkerControlStrip keyboard mapping",
+      "description": "As a developer, I need the marker keyboard index map to support 36 keys.",
+      "acceptanceCriteria": [
+        "Import KEY_ORDER and getKeyForIndex from src/constants/keyboardMapping",
+        "Change getKeyboardIndexMap return type to Map<string, string> (section ID to key character)",
+        "Remove index < 9 limit, use index < KEY_ORDER.length",
+        "Store uppercase key character for display (e.g., 'Q' not 'q')",
+        "Update markerKeyboardIndexMap to use string keys",
+        "Update pressedKeyboardIndex prop type to pressedKeyboardKey: string | null",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Update App.tsx for string-based keyboard key",
+      "description": "As a developer, I need to update the pressed key state to use strings.",
+      "acceptanceCriteria": [
+        "Rename pressedKeyboardIndex state to pressedKeyboardKey with type string | null",
+        "Update handleSectionKeyPressed to receive key: string parameter",
+        "Update setPressedKeyboardKey call with the key string",
+        "Pass pressedKeyboardKey to MarkerControlStrip (update prop name)",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Update keyboard label display and blink animation",
+      "description": "As a user, I want to see correct key labels and blink animation for all 36 keys.",
+      "acceptanceCriteria": [
+        "Label shows uppercase letter for letter keys (Q, W, E, etc.)",
+        "Label shows digit for number keys (1-9, 0)",
+        "Sections beyond 36 enabled sections show no label",
+        "Title attribute shows 'Press Q to play' format (uppercase)",
+        "Blink animation triggers when pressedKeyboardKey matches (case-insensitive comparison)",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Verified in browser - keyboard labels 1-0 and Q-I display correctly, blink animation works for all keys"
     }
   ]
 }

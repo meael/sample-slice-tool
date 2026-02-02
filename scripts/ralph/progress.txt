@@ -1,22 +1,46 @@
 # Ralph Progress Log
-Started: Mon Feb  2 21:13:53 EET 2026
+Started: Mon Feb  2 21:48:19 EET 2026
+---
+
+## Codebase Patterns
+- Keyboard mapping centralized in `src/constants/keyboardMapping.ts`
+- KEY_ORDER constant defines the 36-key sequence: digits 1-0 then letters q-m (QWERTY layout)
+- Use `getKeyForIndex()` for index→key and `getIndexForKey()` for key→index lookups
+
 ---
 
 ## 2026-02-02 - US-001
-- Added `mb-4` (16px) bottom margin to EditorToolbar container
-- Files changed: `src/components/EditorToolbar.tsx`
+- Created shared KEY_ORDER constant for extended keyboard mapping (36 keys)
+- Files created: `src/constants/keyboardMapping.ts`
 - **Learnings for future iterations:**
-  - EditorToolbar uses a fixed height (`h-10`) outer div to prevent layout shifts
-  - The margin is on the outer div, so spacing applies whether controls are visible or hidden
-  - Toolbar controls are conditionally rendered based on `hasMarkers` prop
+  - No existing constants directory - created `src/constants/` as new pattern
+  - Key order follows QWERTY layout: 1234567890qwertyuiopasdfghjklzxcvbnm
+  - Helper functions `getKeyForIndex()` and `getIndexForKey()` handle lookups with case-insensitivity
 ---
 
-## 2026-02-02 - US-002
-- Added Upload icon from lucide-react to FileLoaderButton
-- Added `flex items-center gap-1.5` to button for proper icon/text alignment
-- Files changed: `src/components/FileLoaderButton.tsx`
+## 2026-02-02 - US-002, US-003, US-004
+- Implemented extended keyboard mapping across the application
+- Files changed:
+  - `src/hooks/useKeyboardControls.ts` - Updated to use KEY_ORDER and pass key string to callback
+  - `src/components/MarkerControlStrip.tsx` - Updated to display 36 keys and use string-based comparison
+  - `src/App.tsx` - Updated state and callback to use string instead of number
 - **Learnings for future iterations:**
-  - FileLoaderButton is a subtle button shown after waveform is loaded (top-left corner)
-  - lucide-react icons work well at `w-4 h-4` size for small buttons
-  - Use `gap-1.5` for icon-to-text spacing in compact buttons
+  - US-002, US-003, US-004 are tightly coupled - changing the callback signature requires updating all three together
+  - Keyboard labels display uppercase (e.g., "Q") but comparisons are case-insensitive (using toLowerCase())
+  - The `keyboardKeyMap` pattern: Map<sectionId, keyCharacter> for efficient lookup
+  - MarkerControlStrip uses `getKeyForIndex().toUpperCase()` for display consistency
+---
+
+## 2026-02-02 - US-005
+- Verified keyboard label display and blink animation in browser
+- No code changes needed - functionality was already implemented in US-002/003/004
+- Browser verification confirmed:
+  - Digit labels (1-9, 0) display correctly for first 10 sections
+  - Letter labels (Q, W, E, R, T, Y, U, I...) display in uppercase for sections 11+
+  - Sections beyond 36 show delete icon only (no keyboard label)
+  - Blink animation triggers correctly for both number and letter keys
+  - Case-insensitive key matching works (pressing 'q' highlights 'Q' label)
+- **Learnings for future iterations:**
+  - US-005 was effectively a verification story - all implementation was done in US-002/003/004
+  - Browser testing with dev-browser skill confirmed the full integration works end-to-end
 ---
