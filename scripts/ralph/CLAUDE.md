@@ -91,8 +91,14 @@ If no browser tools are available, note in your progress report that manual brow
 
 After completing a user story, check if ALL stories have `passes: true`.
 
-If ALL stories are complete and passing, reply with:
-<promise>COMPLETE</promise>
+If ALL stories are complete and passing:
+1. Commit all Ralph documentation files with message: `update ralph docs`
+   - `scripts/ralph/progress.txt`
+   - `scripts/ralph/prd.json`
+   - `scripts/ralph/.last-branch`
+   - `scripts/ralph/archive/*` (if any new archives)
+   - `tasks/prd-*.md` (if any new PRD files)
+2. Then reply with: <promise>COMPLETE</promise>
 
 If there are still stories with `passes: false`, end your response normally (another iteration will pick up the next story).
 
