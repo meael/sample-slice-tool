@@ -1,52 +1,101 @@
 {
   "project": "Audio Slice Tool",
-  "branchName": "ralph/github-pages-deploy",
-  "description": "GitHub Pages deployment setup - Configure Vite base path and GitHub Actions workflow for automatic deployment",
+  "branchName": "ralph/iconography-enforcement",
+  "description": "Iconography Enforcement - Replace all Unicode icons with Lucide React SVG icons",
   "userStories": [
     {
       "id": "US-001",
-      "title": "Configure Vite base path for GitHub Pages",
-      "description": "As a developer, I need the build to use the correct base path so assets load correctly on GitHub Pages.",
+      "title": "Install Lucide React icon library",
+      "description": "As a developer, I need the Lucide React library installed to use consistent SVG icons.",
       "acceptanceCriteria": [
-        "Update vite.config.ts to set base: '/sample-slice-tool/' for production builds",
-        "Base path should only apply in production (not development)",
-        "Run npm run build successfully",
-        "Verify dist/index.html references assets with /sample-slice-tool/ prefix",
+        "Run npm install lucide-react",
+        "Verify lucide-react is added to package.json dependencies",
         "Typecheck passes"
       ],
       "priority": 1,
       "passes": true,
-      "notes": ""
+      "notes": "lucide-react was already installed (^0.563.0)"
     },
     {
       "id": "US-002",
-      "title": "Add GitHub Actions workflow for deployment",
-      "description": "As a developer, I want automatic deployment to GitHub Pages when I push to main.",
+      "title": "Replace undo/redo/reset Unicode with Lucide icons",
+      "description": "As a user, I want the undo/redo/reset buttons to use proper SVG icons.",
       "acceptanceCriteria": [
-        "Create .github/workflows/deploy.yml workflow file",
-        "Workflow triggers on push to main branch",
-        "Workflow uses Node.js 20",
-        "Workflow runs npm ci, npm run build",
-        "Workflow uses actions/configure-pages, actions/upload-pages-artifact, actions/deploy-pages",
-        "Workflow has proper permissions (pages: write, id-token: write)",
-        "Typecheck passes"
+        "Import Undo2, Redo2, RotateCcw from lucide-react in UndoRedoButtons.tsx",
+        "Replace <span aria-hidden=\"true\">↶</span> with <Undo2 className=\"w-4 h-4\" />",
+        "Replace <span aria-hidden=\"true\">↷</span> with <Redo2 className=\"w-4 h-4\" />",
+        "Replace <span aria-hidden=\"true\">⟲</span> with <RotateCcw className=\"w-4 h-4\" />",
+        "Icons inherit text color via currentColor",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 2,
       "passes": true,
-      "notes": ""
+      "notes": "All three icons replaced and verified in browser"
     },
     {
       "id": "US-003",
-      "title": "Create main branch from current state",
-      "description": "As a developer, I need a main branch to trigger deployments from.",
+      "title": "Replace Toast Unicode with Lucide icons",
+      "description": "As a user, I want toast notifications to use proper SVG icons.",
       "acceptanceCriteria": [
-        "Create main branch from current branch HEAD",
-        "Main branch contains all current features and commits",
-        "Verify main branch exists with git branch --list main",
-        "Typecheck passes"
+        "Import Check, AlertCircle, X from lucide-react in Toast.tsx",
+        "Replace <span className=\"text-lg\">✓</span> with <Check className=\"w-4 h-4\" />",
+        "Replace <span className=\"text-lg\">✕</span> with <AlertCircle className=\"w-4 h-4\" />",
+        "Replace × close button text with <X className=\"w-4 h-4\" />",
+        "Icons inherit colors from parent elements",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
       ],
       "priority": 3,
-      "passes": true,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Replace dropdown chevron Unicode with Lucide icon",
+      "description": "As a user, I want dropdown indicators to use a proper SVG chevron icon.",
+      "acceptanceCriteria": [
+        "Import ChevronDown from lucide-react in SectionDropdown.tsx",
+        "Replace <span className=\"text-xs\" style={{ fontSize: 10 }}>▼</span> with <ChevronDown className=\"w-3 h-3\" />",
+        "Remove the inline fontSize style",
+        "Icon inherits text color from parent",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Replace delete marker Unicode with Lucide icon",
+      "description": "As a user, I want the marker delete buttons to use a proper SVG X icon.",
+      "acceptanceCriteria": [
+        "Import X from lucide-react in MarkerControlStrip.tsx",
+        "Replace first × character (hover close icon around line 235) with <X className=\"w-3 h-3\" />",
+        "Replace second × character (always-visible close around line 254) with <X className=\"w-3 h-3\" />",
+        "Icons inherit text color and hover states from parent",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Audit and verify no Unicode icons remain",
+      "description": "As a developer, I need to verify that no Unicode characters are used as UI icons.",
+      "acceptanceCriteria": [
+        "Run grep search for Unicode icon characters in .tsx files",
+        "Confirm no matches for: × ↶ ↷ ⟲ ▼ ✓ ✕ in interactive controls",
+        "Any remaining Unicode is only in comments or plain text content",
+        "All interactive icons render via Lucide React components",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
       "notes": ""
     }
   ]

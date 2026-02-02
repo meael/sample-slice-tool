@@ -6,6 +6,7 @@ Started: Sun Feb  1 21:46:44 EET 2026
 - Vite config uses function form `defineConfig(({ mode }) => ({...}))` to access build mode for conditional configuration
 - GitHub Pages deployment requires base path matching repository name
 - GitHub Actions workflows go in `.github/workflows/` directory
+- lucide-react is already installed (^0.563.0) - import icons directly with `import { IconName } from 'lucide-react'`
 
 ---
 
@@ -50,4 +51,29 @@ Started: Sun Feb  1 21:46:44 EET 2026
   - Use `git branch -f <branch> <commit>` to force-update an existing branch to a new commit
   - Branch operations don't create commits - they just move the branch reference pointer
   - For deployment workflows that trigger on push to main, ensure main branch is up to date before pushing
+---
+
+## 2026-02-02 - US-001 (Iconography Enforcement)
+- **Story**: Install Lucide React icon library
+- **What was implemented**: Verified lucide-react is already installed
+- **Files changed**: None (library was pre-existing)
+- **Learnings for future iterations:**
+  - lucide-react version ^0.563.0 is already a dependency in this project
+  - No installation needed, can proceed directly to using Lucide icons
+  - Import syntax: `import { IconName } from 'lucide-react'`
+---
+
+## 2026-02-02 - US-002 (Iconography Enforcement)
+- **Story**: Replace undo/redo/reset Unicode with Lucide icons
+- **What was implemented**: Replaced Unicode characters with Lucide React SVG icons
+- **Files changed**: src/components/UndoRedoButtons.tsx
+- **Changes**:
+  - Added import for Undo2, Redo2, RotateCcw from lucide-react
+  - Replaced `<span aria-hidden="true">↶</span>` with `<Undo2 className="w-4 h-4" />`
+  - Replaced `<span aria-hidden="true">↷</span>` with `<Redo2 className="w-4 h-4" />`
+  - Replaced `<span aria-hidden="true">⟲</span>` with `<RotateCcw className="w-4 h-4" />`
+- **Learnings for future iterations:**
+  - Lucide icons inherit color via `currentColor` automatically, so they work with Tailwind text color classes
+  - Use `w-4 h-4` for consistent 16px icon sizing in button contexts
+  - Icons must be loaded into the app with an audio file to see the undo/redo/reset buttons (they appear in toolbar after file load)
 ---

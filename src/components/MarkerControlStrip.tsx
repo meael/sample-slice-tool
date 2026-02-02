@@ -220,7 +220,7 @@ export function MarkerControlStrip({
                   </div>
                   {/* Close icon - hidden by default, shown on hover */}
                   <div
-                    className="absolute flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 text-xs leading-none select-none cursor-pointer transition-all duration-150 hover:bg-red-600 hover:text-white"
+                    className="absolute inset-0 m-auto flex items-center justify-center w-4 h-4 rounded-full bg-neutral-700 text-neutral-300 select-none cursor-pointer transition-all duration-150 hover:bg-red-600 hover:text-white"
                     style={{ opacity: isControlHovered ? 1 : 0, pointerEvents: isControlHovered ? 'auto' : 'none' }}
                     onClick={(e) => {
                       e.stopPropagation();

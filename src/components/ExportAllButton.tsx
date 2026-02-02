@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { FolderDown } from 'lucide-react';
 
 export type ExportAllFormat = 'wav' | 'mp3';
 
@@ -42,7 +43,7 @@ export function ExportAllButton({ onExportAll }: ExportAllButtonProps) {
         className="px-3 py-1.5 text-xs text-neutral-400 hover:text-neutral-200 bg-neutral-800 hover:bg-neutral-700 border border-neutral-700 transition-colors tracking-wide flex items-center gap-1.5"
         title="Export all sections as ZIP"
       >
-        <span>↓</span>
+        <FolderDown className="w-4 h-4" />
         <span>Export All</span>
       </button>
       {/* Dropdown menu */}
