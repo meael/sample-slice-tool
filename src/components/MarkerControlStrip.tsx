@@ -4,6 +4,7 @@ import type { Marker } from '../types/marker';
 import type { Section } from '../types/section';
 import type { VisibleRange } from '../types/zoom';
 import { SectionHeader, type ExportFormat } from './SectionHeader';
+import { KEY_ORDER, getKeyForIndex } from '../constants/keyboardMapping';
 
 export type { ExportFormat };
 
@@ -28,8 +29,8 @@ export interface MarkerControlStripProps {
   exportingSectionId?: string | null;
   /** Callback when user toggles a section's enabled state */
   onToggleSectionEnabled?: (sectionId: string) => void;
-  /** Keyboard index that was just pressed (for blink animation) */
-  pressedKeyboardIndex?: number | null;
+  /** Keyboard key that was just pressed (for blink animation) */
+  pressedKeyboardKey?: string | null;
 }
 
 /**
@@ -47,7 +48,7 @@ export function MarkerControlStrip({
   onExportSection,
   exportingSectionId,
   onToggleSectionEnabled,
-  pressedKeyboardIndex,
+  pressedKeyboardKey,
 }: MarkerControlStripProps) {
   /**
    * Calculate the pixel X position for a time value
@@ -83,39 +84,43 @@ export function MarkerControlStrip({
   };
 
   /**
-   * Build a map from section ID to keyboard index (1-9) for enabled sections only.
-   * Enabled sections get keyboard numbers 1-9 based on their position order.
-   * Returns undefined for disabled sections or if index > 9.
+   * Build a map from section ID to keyboard key character for enabled sections only.
+   * Enabled sections get keyboard keys based on their position order (1-0, Q-M).
+   * Returns uppercase key character for display.
+   * Returns undefined for disabled sections or if index >= KEY_ORDER.length.
    */
-  const getKeyboardIndexMap = (): Map<string, number> => {
-    const map = new Map<string, number>();
+  const getKeyboardKeyMap = (): Map<string, string> => {
+    const map = new Map<string, string>();
     const enabledSections = sections.filter(s => s.enabled);
     enabledSections.forEach((section, index) => {
-      if (index < 9) {
-        map.set(section.id, index + 1); // 1-indexed for keyboard display
+      if (index < KEY_ORDER.length) {
+        const key = getKeyForIndex(index);
+        if (key !== undefined) {
+          map.set(section.id, key.toUpperCase()); // Uppercase for display
+        }
       }
     });
     return map;
   };
 
-  const keyboardIndexMap = getKeyboardIndexMap();
+  const keyboardKeyMap = getKeyboardKeyMap();
 
   /**
-   * Build a map from marker ID to keyboard index.
-   * A marker gets a keyboard index if it's the start marker of an enabled section.
+   * Build a map from marker ID to keyboard key character.
+   * A marker gets a keyboard key if it's the start marker of an enabled section.
    */
-  const getMarkerKeyboardIndexMap = (): Map<string, number> => {
-    const map = new Map<string, number>();
+  const getMarkerKeyboardKeyMap = (): Map<string, string> => {
+    const map = new Map<string, string>();
     sections.forEach(section => {
-      const keyboardIndex = keyboardIndexMap.get(section.id);
-      if (keyboardIndex !== undefined) {
-        map.set(section.startMarker.id, keyboardIndex);
+      const keyboardKey = keyboardKeyMap.get(section.id);
+      if (keyboardKey !== undefined) {
+        map.set(section.startMarker.id, keyboardKey);
       }
     });
     return map;
   };
 
-  const markerKeyboardIndexMap = getMarkerKeyboardIndexMap();
+  const markerKeyboardKeyMap = getMarkerKeyboardKeyMap();
 
   /**
    * Build a map from marker ID to the section it starts (if any).
@@ -168,7 +173,7 @@ export function MarkerControlStrip({
       {markers.map((marker) => {
         if (!isMarkerVisible(marker.time)) return null;
         const pixelX = getPixelX(marker.time);
-        const keyboardIndex = markerKeyboardIndexMap.get(marker.id);
+        const keyboardKey = markerKeyboardKeyMap.get(marker.id);
         const section = markerSectionMap.get(marker.id);
         const isEnabledSection = section?.enabled ?? false;
         const isHovered = hoveredMarkerId === marker.id;
@@ -176,7 +181,7 @@ export function MarkerControlStrip({
 
         // For enabled sections: show keyboard label by default, close icon on hover
         // For disabled sections: always show close icon with not-allowed cursor
-        const hasKeyboardLabel = isEnabledSection && keyboardIndex !== undefined;
+        const hasKeyboardLabel = isEnabledSection && keyboardKey !== undefined;
         const isDisabledSection = section !== undefined && !section.enabled;
 
         return (
@@ -209,14 +214,14 @@ export function MarkerControlStrip({
                   {/* pointer-events: none prevents this element from causing hover state changes */}
                   <div
                     className={`flex items-center justify-center min-w-[14px] h-[14px] px-0.5 rounded text-[10px] font-medium leading-none select-none border shadow-sm transition-opacity duration-150 ${
-                      pressedKeyboardIndex === keyboardIndex
+                      pressedKeyboardKey?.toLowerCase() === keyboardKey?.toLowerCase()
                         ? 'bg-cyan-400 text-neutral-900 border-cyan-300 scale-110'
                         : 'bg-neutral-600 text-neutral-200 border-neutral-500'
                     }`}
                     style={{ opacity: isControlHovered ? 0 : 1, pointerEvents: 'none' }}
-                    title={`Press ${keyboardIndex} to play`}
+                    title={`Press ${keyboardKey} to play`}
                   >
-                    {keyboardIndex}
+                    {keyboardKey}
                   </div>
                   {/* Close icon - hidden by default, shown on hover */}
                   <div

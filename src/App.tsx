@@ -46,11 +46,11 @@ function App() {
   const { playSegment, stop, pause, resume, state: playbackState, currentTime: playbackCurrentTime, segmentStart, segmentEnd } = usePlayback({ audioBuffer });
 
   // Handle keyboard shortcut press for visual feedback (blink animation)
-  const handleSectionKeyPressed = useCallback((keyboardIndex: number) => {
-    setPressedKeyboardIndex(keyboardIndex);
+  const handleSectionKeyPressed = useCallback((keyboardKey: string) => {
+    setPressedKeyboardKey(keyboardKey);
     // Clear after animation duration (~250ms)
     setTimeout(() => {
-      setPressedKeyboardIndex(null);
+      setPressedKeyboardKey(null);
     }, 250);
   }, []);
 
@@ -78,8 +78,8 @@ function App() {
   // Track which section is currently being exported (for individual export spinner)
   const [exportingSectionId, setExportingSectionId] = useState<string | null>(null);
 
-  // Track which keyboard index was pressed (for blink animation)
-  const [pressedKeyboardIndex, setPressedKeyboardIndex] = useState<number | null>(null);
+  // Track which keyboard key was pressed (for blink animation)
+  const [pressedKeyboardKey, setPressedKeyboardKey] = useState<string | null>(null);
 
   // Reset confirmation dialog state
   const [showResetDialog, setShowResetDialog] = useState(false);
@@ -313,7 +313,7 @@ function App() {
             onExportSection={handleExportSection}
             exportingSectionId={exportingSectionId}
             onToggleSectionEnabled={handleToggleSectionEnabled}
-            pressedKeyboardIndex={pressedKeyboardIndex}
+            pressedKeyboardKey={pressedKeyboardKey}
           />
           {/* Waveform canvas */}
           <WaveformCanvas

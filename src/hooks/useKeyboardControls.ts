@@ -1,6 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import type { Section } from '../types/section';
 import type { PlaybackState } from './usePlayback';
+import { KEY_ORDER, getIndexForKey } from '../constants/keyboardMapping';
 
 export interface UseKeyboardControlsOptions {
   sections: Section[];
@@ -9,8 +10,8 @@ export interface UseKeyboardControlsOptions {
   onPause: () => void;
   onResume: () => void;
   onStop: () => void;
-  /** Callback when a section key (1-9) is pressed on an enabled section */
-  onSectionKeyPressed?: (keyboardIndex: number) => void;
+  /** Callback when a section key is pressed on an enabled section */
+  onSectionKeyPressed?: (keyboardKey: string) => void;
   /** Undo/redo callbacks */
   canUndo?: boolean;
   canRedo?: boolean;
@@ -30,8 +31,8 @@ function isInputElement(target: EventTarget | null): boolean {
 /**
  * Hook for handling keyboard controls for audio playback
  *
- * - Keys 1-9 play the corresponding enabled section
- * - Key N plays enabled section N (enabledSections[N-1])
+ * - Keys 1-0, Q-M (36 keys) play the corresponding enabled section
+ * - Key order: 1234567890qwertyuiopasdfghjklzxcvbnm
  * - Only enabled sections receive keyboard shortcuts
  * - Spacebar pauses/resumes playback
  * - Escape stops playback and resets to idle
@@ -102,10 +103,10 @@ export function useKeyboardControls({
         return;
       }
 
-      // Check for number keys 1-9
-      if (key >= '1' && key <= '9') {
-        const keyNumber = parseInt(key, 10); // 1-9
-        const sectionIndex = keyNumber - 1; // 0-8
+      // Check for section playback keys (1-0, Q-M)
+      const keyLower = key.toLowerCase();
+      if (KEY_ORDER.includes(keyLower)) {
+        const sectionIndex = getIndexForKey(keyLower);
 
         // Filter to only enabled sections for keyboard mapping
         const enabledSections = sections.filter(s => s.enabled);
@@ -118,12 +119,12 @@ export function useKeyboardControls({
 
         const section = enabledSections[sectionIndex];
 
-        // Prevent default behavior for number keys
+        // Prevent default behavior for section keys
         event.preventDefault();
 
         // Notify about section key press (for visual feedback like blink animation)
         if (onSectionKeyPressed) {
-          onSectionKeyPressed(keyNumber);
+          onSectionKeyPressed(keyLower);
         }
 
         onPlaySegment(section.startTime, section.endTime);
