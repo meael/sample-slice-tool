@@ -13,6 +13,8 @@ export interface UndoRedoButtonsProps {
   onReset: () => void;
   /** Whether buttons should be disabled (e.g., during playback) */
   disabled?: boolean;
+  /** Whether there are any markers to reset */
+  hasMarkers?: boolean;
 }
 
 /**
@@ -25,6 +27,7 @@ export function UndoRedoButtons({
   onRedo,
   onReset,
   disabled = false,
+  hasMarkers = false,
 }: UndoRedoButtonsProps) {
   const baseButtonClass =
     'px-2 py-1.5 text-xs bg-neutral-800 border border-neutral-700 transition-colors';
@@ -61,8 +64,8 @@ export function UndoRedoButtons({
       <button
         type="button"
         onClick={onReset}
-        disabled={disabled}
-        className={`${baseButtonClass} ${disabled ? disabledClass : enabledClass} ml-1`}
+        disabled={disabled || !hasMarkers}
+        className={`${baseButtonClass} ${disabled || !hasMarkers ? disabledClass : enabledClass} ml-1`}
         title="Reset all markers"
         aria-label="Reset"
       >

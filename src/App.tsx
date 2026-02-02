@@ -292,6 +292,7 @@ function App() {
             onRedo={redo}
             onReset={handleResetClick}
             disabled={playbackState === 'playing'}
+            hasMarkers={markers.length > 0}
           />
         )}
         {isLoading && (
