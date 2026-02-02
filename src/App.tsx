@@ -301,7 +301,7 @@ function App() {
       </div>
 
       {/* Waveform area */}
-      <div className="flex-1 flex items-center justify-center">
+      <div className="flex-1 flex items-center justify-center px-3">
         <div ref={waveformContainerRef} className="w-full flex flex-col">
           {/* Marker control strip */}
           <MarkerControlStrip
