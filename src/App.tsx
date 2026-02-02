@@ -3,9 +3,9 @@ import { DropZone } from './components/DropZone';
 import { WaveformCanvas } from './components/WaveformCanvas';
 import { MarkerControlStrip, type ExportFormat } from './components/MarkerControlStrip';
 import { FileLoaderButton } from './components/FileLoaderButton';
-import { ExportAllButton, type ExportAllFormat } from './components/ExportAllButton';
+import { EditorToolbar } from './components/EditorToolbar';
+import type { ExportAllFormat } from './components/ExportAllButton';
 import { ExportProgressOverlay } from './components/ExportProgressOverlay';
-import { UndoRedoButtons } from './components/UndoRedoButtons';
 import { ConfirmResetDialog } from './components/ConfirmResetDialog';
 import { audioService } from './services/AudioService';
 import { waveformService } from './services/WaveformService';
@@ -281,20 +281,6 @@ function App() {
       {/* Header with load file button */}
       <div className="flex-shrink-0 p-3 flex items-center gap-3">
         <FileLoaderButton onFileSelected={handleFileLoaded} />
-        {audioBuffer && sections.length > 0 && (
-          <ExportAllButton onExportAll={handleExportAll} />
-        )}
-        {audioBuffer && (
-          <UndoRedoButtons
-            canUndo={canUndo}
-            canRedo={canRedo}
-            onUndo={undo}
-            onRedo={redo}
-            onReset={handleResetClick}
-            disabled={playbackState === 'playing'}
-            hasMarkers={markers.length > 0}
-          />
-        )}
         {isLoading && (
           <span className="text-neutral-400 text-xs">Loading...</span>
         )}
@@ -303,6 +289,18 @@ function App() {
       {/* Waveform area */}
       <div className="flex-1 flex items-center justify-center px-3">
         <div ref={waveformContainerRef} className="w-full flex flex-col">
+          {/* Editor toolbar (context-aware - appears when markers exist) */}
+          <EditorToolbar
+            canUndo={canUndo}
+            canRedo={canRedo}
+            onUndo={undo}
+            onRedo={redo}
+            onReset={handleResetClick}
+            onExportAll={handleExportAll}
+            hasMarkers={markers.length > 0}
+            hasSections={sections.length > 0}
+            disabled={playbackState === 'playing'}
+          />
           {/* Marker control strip */}
           <MarkerControlStrip
             markers={markers}
